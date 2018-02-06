@@ -1,0 +1,52 @@
+<RCC>
+    <qresource prefix="/localImages">
+        <file>Images/add_click.svg</file>
+        <file>Images/add_default.svg</file>
+        <file>Images/add_hover.svg</file>
+        <file>Images/arrowRight_click.svg</file>
+        <file>Images/arrowRight_default.svg</file>
+        <file>Images/arrowRight_hover.svg</file>
+        <file>Images/arrowUp_click.svg</file>
+        <file>Images/arrowUp_default.svg</file>
+        <file>Images/arrowUp_hover.svg</file>
+        <file>Images/pdfExport.svg</file>
+        <file>Images/pngExport.svg</file>
+        <file>Images/remove_click.svg</file>
+        <file>Images/remove_default.svg</file>
+        <file>Images/remove_hover.svg</file>
+        <file>Images/scaling_default.svg</file>
+        <file>Images/scaling_click.svg</file>
+        <file>Images/scaling_hover.svg</file>
+        <file>Images/new.svg</file>
+        <file>Images/open.svg</file>
+        <file>Images/plot.svg</file>
+        <file>Images/save.svg</file>
+        <file>Images/pdfExport_click.svg</file>
+        <file>Images/pdfExport_default.svg</file>
+        <file>Images/pdfExport_hover.svg</file>
+        <file>Images/pngExport_click.svg</file>
+        <file>Images/pngExport_default.svg</file>
+        <file>Images/pngExport_hover.svg</file>
+        <file>Images/fit_click.svg</file>
+        <file>Images/fit_default.svg</file>
+        <file>Images/fit_hover.svg</file>
+        <file>Images/IconPNGRounded.png</file>
+        <file>Images/IconRounded.svg</file>
+        <file>Images/DfastLTfit_icon2.png</file>
+        <file>Images/IconFlat.svg</file>
+        <file>Images/PALS.JPG</file>
+        <file>Images/PMs.JPG</file>
+        <file>Images/start_click.svg</file>
+        <file>Images/start_default.svg</file>
+        <file>Images/start_hover.svg</file>
+        <file>Images/scale.svg</file>
+        <file alias="stack">Images/database.svg</file>
+        <file>Images/save_click.svg</file>
+        <file>Images/save_hover.svg</file>
+        <file>Images/save_default.svg</file>
+        <file>Images/htmlExport_click.svg</file>
+        <file>Images/htmlExport_hover.svg</file>
+        <file>Images/htmlExport_default.svg</file>
+        <file>Images/htmlExport.svg</file>
+    </qresource>
+</RCC>

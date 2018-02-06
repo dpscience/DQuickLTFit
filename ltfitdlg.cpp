@@ -1,0 +1,1090 @@
+/****************************************************************************
+**
+**  DQuickLTFit, a software for the analysis of Positron-Lifetime Spectra
+**  based on the Least-Square Optimization using the Levenberg-Marquardt
+**  Algorithm.
+**
+**  Copyright (C) 2016-2018 Danny Petschke
+**
+**  This program is free software: you can redistribute it and/or modify
+**  it under the terms of the GNU General Public License as published by
+**  the Free Software Foundation, either version 3 of the License, or
+**  (at your option) any later version.
+**
+**  This program is distributed in the hope that it will be useful,
+**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**  GNU General Public License for more details.
+**
+**  You should have received a copy of the GNU General Public License
+**  along with this program.  If not, see http://www.gnu.org/licenses/.
+**
+*****************************************************************************
+**
+**  @author: Danny Petschke
+**  @contact: danny.petschke@uni-wuerzburg.de
+**
+*****************************************************************************/
+
+#include "ltfitdlg.h"
+#include "ui_ltfitdlg.h"
+
+#ifndef WINDOWS_FONT
+#define WINDOWS_FONT(__pointSize__)  QFont("Arial", __pointSize__)
+#endif
+
+DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::DFastLTFitDlg),
+    m_onStart(false)
+{
+    ui->setupUi(this);
+
+    QApplication::setWindowIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+
+    if ( PALSProjectSettingsManager::sharedInstance()->load() )
+    {
+        if ( !PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().isEmpty() )
+        {
+            m_lastProjectsMenu = new QMenu(ui->menuLoad_file);
+            m_lastProjectsMenu->setTitle("Recent Projects...");
+
+            for ( int i = 0 ; i < PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().size() ; ++ i )
+            {
+                if ( PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().at(i).isEmpty() )
+                    continue;
+
+                QAction *action = new QAction(PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().at(i), this);
+                action->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+
+                connect(action, SIGNAL(triggered()), this, SLOT(openProjectFromLastPath()));
+                m_lastProjectActionList.append(action);
+            }
+
+            m_lastProjectsMenu->addActions(m_lastProjectActionList);
+            ui->menuLoad_file->addAction(m_lastProjectsMenu->menuAction());
+        }
+        else
+            m_lastProjectsMenu = nullptr;
+    }
+    else
+        m_lastProjectsMenu = nullptr;
+
+
+    m_plotWindow = new DFastPlotDlg;
+    m_resultWindow = new DFastResultDlg;
+    m_calculatorWindow = new DFastCalculatorDlg;
+
+    m_fitEngine = new LifeTimeDecayFitEngine;
+
+    m_chiSquareLabel = new QLabel;
+    m_integralCountInROI = new QLabel;
+
+    ui->statusBar->setStyleSheet("background-color: lightgray");
+
+    ui->statusBar->addPermanentWidget(m_chiSquareLabel);
+    ui->statusBar->addPermanentWidget(m_integralCountInROI);
+
+    connect(ui->actionLoad, SIGNAL(triggered()), this, SLOT(openProject()));
+    connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(saveProject()));
+    connect(ui->actionNew, SIGNAL(triggered()), this, SLOT(newProject()));
+    connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(saveProjectAs()));
+    connect(ui->actionImport, SIGNAL(triggered()), this, SLOT(importASCII()));
+
+    connect(ui->pushButtonRunFit, SIGNAL(clicked()), this, SLOT(runFit()));
+    connect(m_fitEngine, SIGNAL(finished()), this, SLOT(fitHasFinished()));
+
+    connect(ui->widget, SIGNAL(dataChanged()), this, SLOT(instantPreview()));
+
+    connect(ui->widget, SIGNAL(fitRangeChanged(int,int)), m_plotWindow, SLOT(setFitRange(int,int)));
+    connect(ui->widget, SIGNAL(fitRangeChanged(int,int)), SLOT(instantPreview()));
+
+    connect(ui->actionPlot_Window, SIGNAL(triggered(bool)), this, SLOT(changePlotWindowVisibility(bool)));
+    connect(m_plotWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(changePlotWindowVisibilityFromOutside(bool)));
+
+    connect(ui->actionResult_Window, SIGNAL(triggered(bool)), this, SLOT(changeResultWindowVisibility(bool)));
+    connect(m_resultWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(changeResultWindowVisibilityFromOutside(bool)));
+
+    connect(ui->actionOpen_Calculator, SIGNAL(triggered(bool)), this, SLOT(changeCalculatorWindowVisibility(bool)));
+    connect(m_calculatorWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(changeCalculatorWindowVisibilityFromOutside(bool)));
+
+    connect(ui->actionExport_As_Batch_Template, SIGNAL(triggered()), this, SLOT(exportAsBatchTemplate()));
+    connect(ui->actionLoad_Sequence, SIGNAL(triggered()), this, SLOT(loadSequence()));
+
+    connect(ui->actionRaw_Data_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeRawDataTraceVisibility(bool)));
+    connect(ui->actionStart_Value_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeStartValueTraceVisibility(bool)));
+    connect(ui->actionFit_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeFitTraceVisibility(bool)));
+
+    connect(m_resultWindow, SIGNAL(resultListIsEmpty()), this, SLOT(disablePDFExport()));
+    connect(m_resultWindow, SIGNAL(resultListHasResults()), this, SLOT(enablePDFExport()));
+
+    connect(ui->actionExport_Current_Result_as_PDF, SIGNAL(triggered()), m_resultWindow, SLOT(printToPDF()));
+    connect(ui->actionExport_Current_Result_as_HTML, SIGNAL(triggered()), m_resultWindow, SLOT(printToHTML()));
+    connect(ui->actionSave_Plot_as_Image, SIGNAL(triggered()), m_plotWindow, SLOT(savePlotAsPNG()));
+    connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+
+    ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/start");
+    ui->pushButtonRunFit->setStatusTip("Fit Lifetime-Data...");
+
+    ui->actionExport_Current_Result_as_PDF->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/pdfExport.svg", 20, 20))));
+    ui->actionExport_Current_Result_as_HTML->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/htmlExport.svg", 20, 20))));
+    ui->actionSave_Plot_as_Image->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/pngExport.svg", 20, 20))));
+
+    ui->actionLoad->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/open.svg", 20, 20)));
+    ui->actionSave->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/save.svg", 20, 20)));
+    ui->actionSaveAs->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/save.svg", 20, 20)));
+    ui->actionNew->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/new.svg", 20, 20)));
+    ui->actionImport->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/plot.svg", 20, 20)));
+    ui->actionAbout->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+    ui->actionOpen_Calculator->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/scale.svg", 20, 20)));
+
+    QPixmap redPixmap(20, 20), greenPixmap(20, 20), bluePixmap(20, 20);
+    redPixmap.fill(Qt::red);
+    greenPixmap.fill(Qt::green);
+    bluePixmap.fill(Qt::blue);
+
+    ui->actionFit_Trace_2->setIcon(greenPixmap);
+    ui->actionRaw_Data_Trace_2->setIcon(redPixmap);
+    ui->actionStart_Value_Trace_2->setIcon(bluePixmap);
+
+    ui->pushButtonRunFit->setToolTip("Fit Lifetime-Data...");
+
+#if defined(Q_OS_WIN)
+    ui->actionLoad->setShortcut(QKeySequence("Ctrl+L"));
+    ui->actionNew->setShortcut(QKeySequence("Ctrl+N"));
+    ui->actionSave->setShortcut(QKeySequence("Ctrl+S"));
+    ui->actionImport->setShortcut(QKeySequence("Ctrl+I"));
+
+    ui->actionPlot_Window->setShortcut(QKeySequence("Ctrl+P"));
+    ui->actionResult_Window->setShortcut(QKeySequence("Ctrl+R"));
+
+    ui->actionRaw_Data_Trace_2->setShortcut(QKeySequence("Ctrl+D"));
+    ui->actionStart_Value_Trace_2->setShortcut(QKeySequence("Ctrl+T"));
+    ui->actionFit_Trace_2->setShortcut(QKeySequence("Ctrl+F"));
+    ui->actionOpen_Calculator->setShortcut(QKeySequence("Ctrl+Alt+C"));
+#endif
+
+#if defined(Q_OS_WIN)
+    m_calculatorWindow->setTextFont(WINDOWS_FONT(10));
+#else
+    m_calculatorWindow->setTextFont(QFont("Helvetica", 12));
+#endif
+
+    newProject();
+
+    m_onStart = true;
+
+    if ( !PALSProjectSettingsManager::sharedInstance()->isLinearLastScaling() )
+        m_plotWindow->setLogarithmicScaling();
+    else
+        m_plotWindow->setLinearScaling();
+
+    ui->widget->setBackgroundChannelRange(PALSProjectSettingsManager::sharedInstance()->getLastBackgroundChannelRange());
+    ui->widget->setBackgroundCalculationUsingFirstChannels(PALSProjectSettingsManager::sharedInstance()->getBackgroundCalculationFromFirstChannels());
+
+    m_plotWindow->setYRangeData(1, 10000);
+
+    if ( PALSProjectSettingsManager::sharedInstance()->getResultWindowWasShownOnExit() )
+        m_resultWindow->show();
+    else
+    {
+        m_resultWindow->show();
+        m_resultWindow->hide();
+    }
+
+    m_plotWindow->show();
+}
+
+DFastLTFitDlg::~DFastLTFitDlg()
+{
+    PALSProjectSettingsManager::sharedInstance()->setLinearAsLastScaling(m_plotWindow->isLinearScalingEnabled());
+    PALSProjectSettingsManager::sharedInstance()->save();
+
+    if ( m_lastProjectsMenu )
+    {
+        while ( m_lastProjectActionList.size() > 0 )
+        {
+            m_lastProjectsMenu->removeAction(m_lastProjectActionList.first());
+
+            QAction *action = m_lastProjectActionList.takeFirst();
+            DDELETE_SAFETY(action);
+        }
+
+        DDELETE_SAFETY(m_lastProjectsMenu);
+    }
+
+    DDELETE_SAFETY(m_resultWindow);
+    DDELETE_SAFETY(m_plotWindow);
+
+    DDELETE_SAFETY(m_chiSquareLabel);
+    DDELETE_SAFETY(m_integralCountInROI);
+
+    DDELETE_SAFETY(ui);
+}
+
+void DFastLTFitDlg::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+
+    const QMessageBox::StandardButton replyBtn = QMessageBox::question(this, "Closing DQuickLTFit?",
+                                                                       "<nobr>Did you save the project?</nobr>",
+                                                                       QMessageBox::Yes|QMessageBox::No);
+
+    if ( replyBtn == QMessageBox::StandardButton::No )
+    {
+        event->ignore();
+        return;
+    }
+
+    event->accept();
+
+    if ( m_resultWindow->isVisible() )
+        PALSProjectSettingsManager::sharedInstance()->setResultWindowWasShownOnExit(true);
+    else
+        PALSProjectSettingsManager::sharedInstance()->setResultWindowWasShownOnExit(false);
+
+    PALSProjectSettingsManager::sharedInstance()->save();
+
+    m_plotWindow->close();
+    m_resultWindow->close();
+    m_calculatorWindow->close();
+
+    QMainWindow::closeEvent(event);
+}
+
+void DFastLTFitDlg::openProject()
+{
+    const QString fileName = QFileDialog::getOpenFileName(this, tr("Open a project"),
+                                                    PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
+                                                    QString("DQuickLTFit Project File (*" % PROJECT_EXTENSION % ")"));
+
+    openProjectFromPath(fileName);
+}
+
+void DFastLTFitDlg::openProjectFromLastPath()
+{
+    openProjectFromPath(((QAction*)sender())->text());
+}
+
+void DFastLTFitDlg::openProjectFromPath(const QString& fileName)
+{
+    if ( fileName.isEmpty() )
+        return;
+
+    PALSProjectSettingsManager::sharedInstance()->setLastChosenPath(QFileInfo(fileName).absoluteDir().absolutePath());
+
+    if ( PALSProjectManager::sharedInstance()->getFileName() == fileName )
+    {
+        DMSGBOX("<nobr>This project is already open!</nobr>");
+        return;
+    }
+
+    if ( !PALSProjectManager::sharedInstance()->load(fileName) )
+    {
+        DMSGBOX("<nobr>Sorry, an error occurred while loading this project!</nobr>");
+        return;
+    }
+    else
+    {
+        if ( !PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().isEmpty() )
+        {
+            int minChn = INT_MAX;
+            int maxChn = -INT_MAX;
+            int minCnts = INT_MAX;
+            int maxCnts = -INT_MAX;
+
+            for ( int i = 0 ; i < PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().size() ; ++ i )
+            {
+                const int channel = (const int)PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().at(i).x();
+                const int counts = (const int)PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().at(i).y();
+
+                maxChn = qMax(channel, maxChn);
+                minChn = qMin(channel, minChn);
+                maxCnts = qMax(counts, maxCnts);
+                minCnts = qMin(counts, minCnts);
+            }
+
+            PALSProjectManager::sharedInstance()->setChannelRanges(minChn, maxChn);
+
+            m_plotWindow->clearAll();
+            m_plotWindow->setXRange(minChn, maxChn);
+
+            m_plotWindow->addRawData(PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData());
+            m_plotWindow->addFitData(PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getFitData());
+            m_plotWindow->addResidualData(PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getResiduals());
+
+            m_plotWindow->setXRange(minChn, maxChn);
+
+            ui->widget->setFitRangeLimits(minChn, maxChn);
+            ui->widget->setFitRange(minChn, maxChn);
+
+            m_plotWindow->setYRangeData(1, maxCnts);
+        }
+        else
+        {
+            PALSProjectManager::sharedInstance()->setChannelRanges(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+
+            m_plotWindow->clearAll();
+            m_plotWindow->setXRange(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+            m_plotWindow->setYRangeData(1, 10000);
+
+            ui->widget->setFitRangeLimits(0, 10000);
+            ui->widget->setFitRange(0, 10000);
+        }
+
+        PALSProjectManager::sharedInstance()->setFileName(fileName);
+        PALSProjectSettingsManager::sharedInstance()->addLastProjectPathToList(fileName);
+
+        ui->widget->updateParamterList();
+        m_resultWindow->clearTabs();
+
+        if ( !PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getFitData().isEmpty() )
+            m_resultWindow->addResultTabsFromHistory();
+    }
+
+    updateWindowTitle();
+    updateLastProjectActionList();
+}
+
+void DFastLTFitDlg::saveProject()
+{
+    QString filename = "";
+    if ( PALSProjectManager::sharedInstance()->getFileName().isEmpty() )
+    {
+        filename = QFileDialog::getSaveFileName(this, tr("Select or type a filename..."),
+                                                PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
+                                                QString("DQuickLTFit Project File (*" % PROJECT_EXTENSION % ")"));
+
+        if ( filename.isEmpty() )
+            return;
+        else
+        {
+            PALSProjectSettingsManager::sharedInstance()->setLastChosenPath(QFileInfo(filename).absoluteDir().absolutePath());
+
+            PALSProjectManager::sharedInstance()->setFileName(filename);
+            PALSProjectSettingsManager::sharedInstance()->addLastProjectPathToList(filename);
+
+            updateLastProjectActionList();
+        }
+    }
+
+
+    if ( PALSProjectManager::sharedInstance()->save(PALSProjectManager::sharedInstance()->getFileName()) ){
+        //DMSGBOX("The project was saved successfully.");
+    }else{
+        DMSGBOX("Sorry, an error occurred while saving this project.");
+    }
+
+    updateWindowTitle();
+}
+
+void DFastLTFitDlg::saveProjectAs()
+{
+    const QString filename = QFileDialog::getSaveFileName(this, tr("Select or type a filename..."),
+                                                          PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
+                                                          QString("DQuickLTFit Project File (*" % PROJECT_EXTENSION % ")"));
+
+    if ( filename.isEmpty() )
+        return;
+    else
+    {
+        PALSProjectSettingsManager::sharedInstance()->setLastChosenPath(QFileInfo(filename).absoluteDir().absolutePath());
+
+        PALSProjectManager::sharedInstance()->setFileName(filename);
+        PALSProjectSettingsManager::sharedInstance()->addLastProjectPathToList(filename);
+
+        updateLastProjectActionList();
+    }
+
+
+    if ( PALSProjectManager::sharedInstance()->save(PALSProjectManager::sharedInstance()->getFileName()) ){
+        //DMSGBOX("The project was saved successfully.");
+    }else{
+        DMSGBOX("Sorry, an error occurred while saving this project.");
+    }
+
+    updateWindowTitle();
+}
+
+void DFastLTFitDlg::newProject()
+{
+    PALSProjectManager::sharedInstance()->createEmptyProject();
+    PALSProjectManager::sharedInstance()->setFileName("");
+
+    m_plotWindow->clearAll();
+    m_plotWindow->setXRange(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+    m_plotWindow->setYRangeData(1, 10000);
+
+    PALSProjectManager::sharedInstance()->setChannelRanges(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+
+    ui->widget->setFitRangeLimits(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+    ui->widget->setFitRange(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
+
+    ui->widget->updateParamterList();
+
+    m_resultWindow->clearTabs();
+
+    updateWindowTitle();
+}
+
+QStringList DFastLTFitDlg::autoDetectDelimiter(const QString& row)
+{
+    if ( row.split(";").size() != 2 )
+    {
+        if ( row.split("|").size() != 2 )
+        {
+            if ( row.split("\t").size() < 2 )
+            {
+                if ( row.split(" ").size() >= 2 )
+                {
+                    QStringList returnList;
+                    const QStringList list = row.split(" ");
+                    const int splitSize = list.size();
+
+                    int cnt = 0;
+                    for ( int i = 0 ; i < splitSize ; ++ i )
+                    {
+                        if ( list.at(i).isEmpty() )
+                            continue;
+                        else
+                        {
+                            bool ok = false;
+                            const int value = (int)QVariant(list.at(i).trimmed()).toDouble(&ok);
+                            DUNUSED_PARAM(value);
+
+                            if ( ok )
+                            {
+                                returnList.append(list.at(i).trimmed());
+                                cnt ++;
+                            }
+
+                            if ( cnt == 2 )
+                                break;
+                        }
+                    }
+
+
+                    return returnList;
+                }
+                else
+                {
+                    QStringList returnList;
+
+                    bool ok = false;
+                    const int value = (int)QVariant(row.trimmed()).toDouble(&ok);
+                    DUNUSED_PARAM(value);
+
+                    if ( ok )
+                    {
+                        returnList.append(row.trimmed());
+                    }
+
+
+                    return returnList;
+                }
+            }
+            else
+            {
+                QStringList returnList;
+                const QStringList list = row.split("\t");
+                const int splitSize = list.size();
+
+                int cnt = 0;
+                for ( int i = 0 ; i < splitSize ; ++ i )
+                {
+                    if ( list.at(i).isEmpty() )
+                        continue;
+                    else
+                    {
+                        bool ok = false;
+                        const int value = (int)QVariant(list.at(i).trimmed()).toDouble(&ok);
+                        DUNUSED_PARAM(value);
+
+                        if ( ok )
+                        {
+                            returnList.append(list.at(i).trimmed());
+                            cnt ++;
+                        }
+
+                        if ( cnt == 2 )
+                            break;
+                    }
+                }
+
+
+                return returnList;
+            }
+        }
+        else
+        {
+            const QStringList list = row.split("|");
+            const QString value1 = list.at(0).trimmed();
+            const QString value2 = list.at(1).trimmed();
+
+            QStringList returnList;
+            returnList.append(value1);
+            returnList.append(value2);
+
+
+            return returnList;
+        }
+    }
+    else
+    {
+        const QStringList list = row.split(";");
+        const QString value1 = list.at(0).trimmed();
+        const QString value2 = list.at(1).trimmed();
+
+        QStringList returnList;
+        returnList.append(value1);
+        returnList.append(value2);
+
+
+        return returnList;
+    }
+
+    return QStringList();
+}
+
+void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameFromSeq)
+{
+    QString fileName = "";
+
+    if ( type == AccessType::FromOneFile ) {
+        fileName = QFileDialog::getOpenFileName(this, tr("Import data from ASCII File..."),
+                                                PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
+                                                tr("Lifetime Data (*.dat *.txt *.log)"));
+
+        if ( fileName.isEmpty() )
+            return;
+
+
+        PALSProjectSettingsManager::sharedInstance()->setLastChosenPath(QFileInfo(fileName).absoluteDir().absolutePath());
+    }
+    else
+        fileName = fileNameFromSeq;
+
+
+    QFile file(fileName);
+
+    if ( file.open(QIODevice::ReadOnly) )
+    {
+        QList<QPointF> dataSet;
+        int minChn = INT_MAX;
+        int  maxChn = -INT_MAX;
+        int minCnts = INT_MAX;
+        int maxCnts = -INT_MAX;
+
+        int channelCounter = 0;
+
+        while ( !file.atEnd() )
+        {
+            QString dataRow = file.readLine();
+
+            const QStringList dataSetString = autoDetectDelimiter(dataRow);
+
+            if ( dataSetString.size() != 2
+                 && dataSetString.size() != 1 )
+                continue;
+
+            bool ok_1 = true, ok_2 = false;
+
+            int channel = channelCounter;
+            channelCounter ++;
+
+            if ( dataSetString.size() == 2 )
+                channel = (int)QVariant(dataSetString.at(0)).toInt(&ok_1);
+
+            int counts = 0;
+
+            if ( dataSetString.size() == 2 )
+                counts = (int)QVariant(dataSetString.at(1)).toInt(&ok_2);
+            else if ( dataSetString.size() == 1 )
+                counts = (int)QVariant(dataSetString.at(0)).toInt(&ok_2);
+
+            if ( !ok_1 || !ok_2 )
+                continue;
+
+            maxChn = qMax(channel, maxChn);
+            minChn = qMin(channel, minChn);
+            maxCnts = qMax(counts, maxCnts);
+            minCnts = qMin(counts, minCnts);
+
+            if ( channel < 0 || counts < 0 )
+            {
+                if ( type == AccessType::FromOneFile )
+                {
+                    DMSGBOX("Please correct the content of this file. Values lower than 0 detected.")
+                }
+
+                file.close();
+                return;
+            }
+
+            dataSet.append(QPointF(channel, counts));
+        }
+
+        file.close();
+
+
+        PALSProjectManager::sharedInstance()->setChannelRanges(minChn, maxChn);
+
+        PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->clearFitData();
+        PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->clearResidualData();
+
+        PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->setLifeTimeData(dataSet);
+
+
+        m_plotWindow->clearAll();
+
+        m_plotWindow->setXRange(minChn, maxChn);
+        m_plotWindow->addRawData(dataSet);
+        m_plotWindow->setXRange(minChn, maxChn);
+
+        int newStartChannel = PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel();
+        if (  newStartChannel < minChn )
+            newStartChannel = minChn;
+
+        int newStopChannel = PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel();
+        if (  newStopChannel > maxChn )
+            newStopChannel = maxChn;
+
+        ui->widget->setFitRangeLimits(minChn, maxChn);
+        ui->widget->setFitRange(newStartChannel, newStopChannel);
+
+        m_plotWindow->setYRangeData(1, maxCnts);
+
+        instantPreview();
+    }
+    else
+    {
+        if ( type == AccessType::FromOneFile )
+        {
+            DMSGBOX("Sorry, an error occurred while importing lifetime-data.")
+        }
+    }
+
+    updateWindowTitle();
+}
+
+void DFastLTFitDlg::runFit()
+{
+    if ( PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().isEmpty() )
+    {
+        DMSGBOX("<nobr>No data to be fitted: Please import any data before.</nobr>");
+        return;
+    }
+
+    QList<QString> sourceConflictList;
+    QList<QString> sampleConflictList;
+    QList<QString> deviceConflictList;
+
+    for ( int a = 0 ; a < PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getSourceParamPtr()->getSize() ; ++ a )
+    {
+        const PALSFitParameter *param = PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getSourceParamPtr()->getParameterAt(a);
+
+        if ( param->isFixed() && (param->isLowerBoundingEnabled() || param->isUpperBoundingEnabled()) )
+            sourceConflictList.append(param->getAlias());
+    }
+
+    for ( int a = 0 ; a < PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getLifeTimeParamPtr()->getSize() ; ++ a )
+    {
+        const PALSFitParameter *param = PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(a);
+
+        if ( param->isFixed() && (param->isLowerBoundingEnabled() || param->isUpperBoundingEnabled()) )
+            sampleConflictList.append(param->getAlias());
+    }
+
+    for ( int a = 0 ; a < PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; ++ a )
+    {
+        const PALSFitParameter *param = PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(a);
+
+        if ( param->isFixed() && (param->isLowerBoundingEnabled() || param->isUpperBoundingEnabled()) )
+            deviceConflictList.append(param->getAlias());
+    }
+
+    if ( !sourceConflictList.isEmpty() || !sampleConflictList.isEmpty() || !deviceConflictList.isEmpty() )
+    {
+        QString conflictText = "There are parameter conflicts: <br><br><b>SOURCE:</b> ";
+
+        for ( int i = 0 ; i <  sourceConflictList.size() ; ++ i)
+        {
+            conflictText.append(sourceConflictList.at(i));
+
+            if ( i != sourceConflictList.size()-1 )
+                conflictText.append(", ");
+        }
+
+        conflictText.append("<br><br><b>SAMPLE:</b> ");
+
+        for ( int i = 0 ; i <  sampleConflictList.size() ; ++ i)
+        {
+            conflictText.append(sampleConflictList.at(i));
+
+            if ( i != sampleConflictList.size()-1 )
+                conflictText.append(", ");
+        }
+
+        conflictText.append("<br><br><b>DEVICE:</b> ");
+
+        for ( int i = 0 ; i <  deviceConflictList.size() ; ++ i)
+        {
+            conflictText.append(deviceConflictList.at(i));
+
+            if ( i != deviceConflictList.size()-1 )
+                conflictText.append(", ");
+        }
+
+        conflictText.append("<br><br>The parameter can either be <b>fixed</b> or <b>has limits</b>.");
+
+        DMSGBOX(conflictText);
+        return;
+    }
+
+    int status = 0;
+    m_fitEngine->fit(PALSProjectManager::sharedInstance()->getDataStructure(), &status);
+}
+
+void DFastLTFitDlg::fitHasFinished()
+{
+    instantPreview();
+
+    m_plotWindow->clearFitData();
+    m_plotWindow->addFitData(m_fitEngine->getFitPlotPoints());
+
+    m_plotWindow->clearResidualData();
+    m_plotWindow->addResidualData(PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getResiduals());
+
+    m_resultWindow->addResultTabFromLastFit();
+}
+
+void DFastLTFitDlg::updateWindowTitle()
+{
+    if ( !PALSProjectManager::sharedInstance()->getFileName().isEmpty() )
+    {
+        this->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+        m_plotWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+        m_resultWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+    }
+    else
+    {
+        this->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+        m_plotWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+        m_resultWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+    }
+
+    m_calculatorWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - Calculator");
+}
+
+void DFastLTFitDlg::updateLastProjectActionList()
+{
+    if ( m_lastProjectsMenu )
+    {
+        while ( m_lastProjectActionList.size() > 0 )
+        {
+            m_lastProjectsMenu->removeAction(m_lastProjectActionList.first());
+
+            QAction *action = m_lastProjectActionList.takeFirst();
+
+            disconnect(action, SIGNAL(triggered()), this, SLOT(openProjectFromLastPath()));
+            DDELETE_SAFETY(action);
+        }
+
+        DDELETE_SAFETY(m_lastProjectsMenu);
+
+        m_lastProjectsMenu = new QMenu(ui->menuLoad_file);
+        m_lastProjectsMenu->setTitle("Recent Projects...");
+
+        for ( int i = 0 ; i < PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().size() ; ++ i )
+        {
+            QAction *action = new QAction(PALSProjectSettingsManager::sharedInstance()->getLastProjectPathList().at(i), this);
+            action->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+
+            connect(action, SIGNAL(triggered()), this, SLOT(openProjectFromLastPath()));
+            m_lastProjectActionList.append(action);
+        }
+
+        m_lastProjectsMenu->addActions(m_lastProjectActionList);
+
+        ui->menuLoad_file->addAction(m_lastProjectsMenu->menuAction());
+    }
+}
+
+void DFastLTFitDlg::enablePDFExport()
+{
+    ui->actionExport_Current_Result_as_PDF->setEnabled(true);
+    ui->actionExport_Current_Result_as_HTML->setEnabled(true);
+}
+
+void DFastLTFitDlg::disablePDFExport()
+{
+    ui->actionExport_Current_Result_as_PDF->setEnabled(false);
+    ui->actionExport_Current_Result_as_HTML->setEnabled(false);
+}
+
+void DFastLTFitDlg::showAbout()
+{
+    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>(C) Copyright 2016-2018 by Danny Petschke<br>All rights reserved.<br><br>";
+    const QString license = "<nobr>Fit-algorithm provided by: <br>MPFIT: A MINPACK-1 Least Squares Fitting Library in C</nobr><br><br>";
+    const QString license2 = "<nobr>Icons provided by: <br>https://www.flaticon.com (flaticon)</nobr><br><br>";
+    const QString license3 = "<nobr>Logo designed by Hannah Heil</nobr>";
+
+    QMessageBox::about(this, "DQuickLTFit", text % license % license2 % license3);
+}
+
+void DFastLTFitDlg::instantPreview()
+{
+    PALSDataStructure *dataStructure = PALSProjectManager::sharedInstance()->getDataStructure();
+
+    if ( dataStructure->getDataSetPtr()->getLifeTimeData().isEmpty() )
+        return;
+
+    const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount()+dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1;
+
+    double channelResolution = dataStructure->getFitSetPtr()->getChannelResolution();
+
+    double startChannel = dataStructure->getFitSetPtr()->getStartChannel();
+    double stopChannel = dataStructure->getFitSetPtr()->getStopChannel();
+    double peakChannel = 0;
+    double countsInPeak = -INT_MAX;
+
+     int startChannelIndex = 0;
+     int stopChannelIndex = 0;
+     int peakChannelIndex = 0;
+
+     int channelCnt = 0;
+     int dataCntInRange = stopChannel-startChannel+1;
+
+     double *x = new double[dataCntInRange];
+     double *y = new double[dataCntInRange];
+     double *ey = new double[dataCntInRange];
+
+     int inRangeCnt = 0;
+     int integralCounts = 0;
+
+     for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() )
+     {
+         if ( p.x() >= startChannel && p.x() <= stopChannel )
+         {
+             x[inRangeCnt] = p.x();
+             y[inRangeCnt] = p.y();
+             ey[inRangeCnt] = 0;
+
+             integralCounts += (int)p.y();
+
+             if ( p.x() == startChannel )
+                 startChannelIndex = channelCnt;
+
+             if ( p.x() == stopChannel )
+                 stopChannelIndex = channelCnt;
+
+             if ( p.y() > countsInPeak )
+             {
+                 countsInPeak = p.y();
+                 peakChannel = p.x();
+                 peakChannelIndex = channelCnt;
+             }
+
+             inRangeCnt ++;
+         }
+
+         channelCnt ++;
+     }
+
+
+    ///Parameter initial conditions:
+    double *params = new double[paramCnt]; //source->sample->gaussian->bkgrd
+
+    int i = 0;
+    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
+    {
+        const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getSourceParamPtr()->getParameterAt(i);
+        params[i] = fitParam->getStartValue()/channelResolution; //tau
+
+        const PALSFitParameter *fitParam2 = dataStructure->getFitSetPtr()->getSourceParamPtr()->getParameterAt(i+1);
+        params[i+1] = fitParam2->getStartValue(); //I
+    }
+
+    int cnt = 0;
+    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
+    {
+        const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(cnt);
+        params[i] = fitParam->getStartValue()/channelResolution; //tau
+
+        cnt ++;
+
+        const PALSFitParameter *fitParam2 = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(cnt);
+        params[i+1] = fitParam2->getStartValue(); //I
+
+        cnt ++;
+    }
+
+    int cntGaussian= 0;
+    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 )
+    {
+        const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
+        params[i] = fitParam->getStartValue()/channelResolution; //sigma
+
+        cntGaussian ++;
+
+        const PALSFitParameter *fitParam2 = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
+        params[i+1] = fitParam2->getStartValue()/channelResolution; //mu
+
+        cntGaussian ++;
+
+        const PALSFitParameter *fitParam3 = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
+        params[i+2] = fitParam3->getStartValue(); //I
+
+        cntGaussian ++;
+    }
+
+    const PALSFitParameter *bkgrd = dataStructure->getFitSetPtr()->getBackgroundParamPtr()->getParameter();
+
+    const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();//+2;
+
+    params[bkgrdIndex] = bkgrd->getStartValue();
+
+    countsInPeak -= bkgrd->getStartValue();
+
+    const double bkgrdVal = params[bkgrdIndex];
+
+
+    QList<QPointF> m_fitPlotSet;
+
+    double residuum = 0;
+    for ( int i = 0 ; i < dataCntInRange-1 ; ++ i )
+    {
+        double f = 0;
+
+        x[i] -= startChannel;
+        const double x_plus_1 = x[i+1]-startChannel;
+
+        for ( int device = paramCnt - cntGaussian - 1 ; device < paramCnt - 1 ; device += 3 )
+        {
+            const double gaussianSigmaVal = params[device]/(2*sqrt(log(2)));
+            const double gaussianMuVal = params[device+1];
+            const double gaussianIntensity = params[device+2];
+
+            for ( int param = 0 ; param <  paramCnt - cntGaussian - 1/*3*/ ; param += 2 ) // first param[0] = tau; second param[1] = Intensity
+            {
+                //Eldrup-Formula:
+                const double yji = exp(-(x[i]-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x[i]-gaussianMuVal)/gaussianSigmaVal));
+                const double yji_plus_1 = exp(-(x_plus_1-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+
+                f += 0.5*params[param+1]/**params[param]*/*(yji-yji_plus_1-erf((x[i]-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+            }
+
+            f *= gaussianIntensity;
+        }
+
+        x[i] += startChannel;
+
+        f *= integralCounts-dataCntInRange*bkgrdVal;;
+        f += bkgrdVal;
+
+        if ( !qFuzzyCompare(y[i], 0.0) )
+            residuum += (f-y[i])*(f-y[i])/y[i];
+
+        m_fitPlotSet.append(QPointF(x[i], f));
+    }
+
+    if ( dataCntInRange == 0 )
+        residuum = -1;
+    else
+        residuum /= ((double)dataCntInRange); //chi-square
+
+    PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->setChiSquareOnStart(residuum);
+
+    m_plotWindow->clearPreviewData();
+    m_plotWindow->addPreviewData(m_fitPlotSet);
+    m_plotWindow->updateBkgrdData();
+
+    m_plotWindow->setFitRange(startChannel, stopChannel);
+
+    if ( residuum == -1 )
+    {
+        m_integralCountInROI->setText("");
+        m_chiSquareLabel->setText("");
+    }
+    else
+    {
+        m_integralCountInROI->setText("Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
+        m_chiSquareLabel->setText("&#967;<sup>2</sup> ( @ start ): <b>" % QString::number(residuum, 'g', 3) % "</b>"); //chi-square
+    }
+
+    delete [] x;
+    delete [] y;
+    delete [] ey;
+    delete [] params;
+}
+
+void DFastLTFitDlg::changePlotWindowVisibility(bool visible)
+{
+    if ( !visible )
+        m_plotWindow->hide();
+    else
+        m_plotWindow->show();
+}
+
+void DFastLTFitDlg::changePlotWindowVisibilityFromOutside(bool visible)
+{
+    disconnect(ui->actionPlot_Window, SIGNAL(triggered(bool)), this, SLOT(changePlotWindowVisibility(bool)));
+
+    ui->actionPlot_Window->setChecked(visible);
+
+    connect(ui->actionPlot_Window, SIGNAL(triggered(bool)), this, SLOT(changePlotWindowVisibility(bool)));
+}
+
+void DFastLTFitDlg::changeResultWindowVisibility(bool visible)
+{
+    if ( !visible )
+        m_resultWindow->hide();
+    else
+        m_resultWindow->show();
+}
+
+void DFastLTFitDlg::changeResultWindowVisibilityFromOutside(bool visible)
+{
+    disconnect(ui->actionResult_Window, SIGNAL(triggered(bool)), this, SLOT(changeResultWindowVisibility(bool)));
+
+    ui->actionResult_Window->setChecked(visible);
+
+    connect(ui->actionResult_Window, SIGNAL(triggered(bool)), this, SLOT(changeResultWindowVisibility(bool)));
+}
+
+void DFastLTFitDlg::changeCalculatorWindowVisibility(bool visible)
+{
+    if ( !visible )
+        m_calculatorWindow->hide();
+    else
+        m_calculatorWindow->show();
+}
+
+void DFastLTFitDlg::changeCalculatorWindowVisibilityFromOutside(bool visible)
+{
+    disconnect(ui->actionOpen_Calculator, SIGNAL(triggered(bool)), this, SLOT(changeCalculatorWindowVisibility(bool)));
+
+    ui->actionOpen_Calculator->setChecked(visible);
+
+    connect(ui->actionOpen_Calculator, SIGNAL(triggered(bool)), this, SLOT(changeCalculatorWindowVisibility(bool)));
+}
+
+void DFastLTFitDlg::changeRawDataTraceVisibility(bool visible)
+{
+    m_plotWindow->setRawDataVisible(visible);
+}
+
+void DFastLTFitDlg::changeStartValueTraceVisibility(bool visible)
+{
+    m_plotWindow->setStartValueDataVisible(visible);
+}
+
+void DFastLTFitDlg::changeFitTraceVisibility(bool visible)
+{
+    m_plotWindow->setFitDataVisible(visible);
+}
+
+void DFastLTFitDlg::calculateBackground()
+{
+    ((ParameterListView*)ui->widget)->updateBackgroundValue();
+}

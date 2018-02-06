@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DFastLTFitDlg</class>
+ <widget class="QMainWindow" name="DFastLTFitDlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>645</width>
+    <height>696</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>DFastLTFitDlg</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow#DFastLTFitDlg {background-color: &quot;white&quot;}</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>2</number>
+    </property>
+    <property name="leftMargin">
+     <number>2</number>
+    </property>
+    <property name="topMargin">
+     <number>2</number>
+    </property>
+    <property name="rightMargin">
+     <number>2</number>
+    </property>
+    <property name="bottomMargin">
+     <number>2</number>
+    </property>
+    <item>
+     <widget class="ParameterListView" name="widget" native="true"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="DSVGButton" name="pushButtonRunFit" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>645</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menuLoad_file">
+    <property name="title">
+     <string>Project</string>
+    </property>
+    <addaction name="actionNew"/>
+    <addaction name="actionLoad"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuPALS_Data">
+    <property name="title">
+     <string>Lifetime Data</string>
+    </property>
+    <addaction name="actionImport"/>
+   </widget>
+   <widget class="QMenu" name="menuPreview">
+    <property name="tearOffEnabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Display</string>
+    </property>
+    <addaction name="actionPlot_Window"/>
+    <addaction name="actionResult_Window"/>
+    <addaction name="separator"/>
+    <addaction name="actionRaw_Data_Trace_2"/>
+    <addaction name="actionStart_Value_Trace_2"/>
+    <addaction name="actionFit_Trace_2"/>
+   </widget>
+   <widget class="QMenu" name="menuExport">
+    <property name="title">
+     <string>Export</string>
+    </property>
+    <addaction name="actionExport_Current_Result_as_PDF"/>
+    <addaction name="actionExport_Current_Result_as_HTML"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_Plot_as_Image"/>
+   </widget>
+   <widget class="QMenu" name="menuInfo">
+    <property name="title">
+     <string>Info</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuCalculator">
+    <property name="title">
+     <string>Calculator</string>
+    </property>
+    <addaction name="actionOpen_Calculator"/>
+   </widget>
+   <addaction name="menuLoad_file"/>
+   <addaction name="menuPALS_Data"/>
+   <addaction name="menuPreview"/>
+   <addaction name="menuExport"/>
+   <addaction name="menuCalculator"/>
+   <addaction name="menuInfo"/>
+  </widget>
+  <action name="actionLoad">
+   <property name="text">
+    <string>Load...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+O</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+S</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import from ASCII...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+I</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+N</string>
+   </property>
+  </action>
+  <action name="actionRaw_Data_Trace">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Raw-Data Trace</string>
+   </property>
+  </action>
+  <action name="actionStart_Value_Trace">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Start-Value Trace</string>
+   </property>
+  </action>
+  <action name="actionFit_Trace">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fit Trace</string>
+   </property>
+  </action>
+  <action name="actionPlot_Window">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Plot Window...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+P</string>
+   </property>
+  </action>
+  <action name="actionRaw_Data_Trace_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Raw-Data Trace</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+D</string>
+   </property>
+  </action>
+  <action name="actionStart_Value_Trace_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Start-Value Trace</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+V</string>
+   </property>
+  </action>
+  <action name="actionFit_Trace_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fit Trace</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+F</string>
+   </property>
+  </action>
+  <action name="actionResult_Window">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Result Window...</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+R</string>
+   </property>
+  </action>
+  <action name="actionLast_Projects">
+   <property name="text">
+    <string>Last Projects...</string>
+   </property>
+  </action>
+  <action name="actionHallo2">
+   <property name="text">
+    <string>hallo2</string>
+   </property>
+  </action>
+  <action name="actionHallo3">
+   <property name="text">
+    <string>hallo3</string>
+   </property>
+  </action>
+  <action name="actionExport_Current_Result_as_PDF">
+   <property name="text">
+    <string>Export Current Result as PDF...</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+P</string>
+   </property>
+  </action>
+  <action name="actionSave_Plot_as_Image">
+   <property name="text">
+    <string>Save Plot as Image...</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+I</string>
+   </property>
+  </action>
+  <action name="actionInfo">
+   <property name="text">
+    <string>About...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+I</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+I</string>
+   </property>
+  </action>
+  <action name="actionOpen_Calculator">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Calculator</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+C</string>
+   </property>
+  </action>
+  <action name="actionExport_As_Batch_Template">
+   <property name="text">
+    <string>Export As Batch-Template (Coming Soon...)</string>
+   </property>
+  </action>
+  <action name="actionLoad_Sequence">
+   <property name="text">
+    <string>Load Sequence...</string>
+   </property>
+  </action>
+  <action name="actionExport_Current_Result_as_HTML">
+   <property name="text">
+    <string>Export Current Result as HTML...</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+H</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>DSVGButton</class>
+   <extends>QWidget</extends>
+   <header location="global">DLib/DGUI/svgbutton.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ParameterListView</class>
+   <extends>QWidget</extends>
+   <header>ltparameterlistview.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
