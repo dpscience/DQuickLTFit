@@ -13,10 +13,14 @@ DQuickLTFit software is written in C++ (Qt-framework) and implements the MPFIT C
 MPFIT was ported from MINPACK-1 library [2].
 
 # License (GNU General Public License)
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License<br> 
-as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.<br>
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. <br><br>
+This program is free software: you can redistribute it and/or modify<br>
+it under the terms of the GNU General Public License as published by<br>
+the Free Software Foundation, either version 3 of the License, or<br>
+(at your option) any later version.<br><br>
+
+This program is distributed in the hope that it will be useful,<br>
+but WITHOUT ANY WARRANTY; without even the implied warranty of<br>
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br><br>
 
 For more details see [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
