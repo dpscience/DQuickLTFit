@@ -16,7 +16,7 @@ The complete form of this license is available at <ref>http://www.gnu.org/licens
 1. Download Qt-framework (at least v5.x) at <ref>https://www.qt.io/download</ref><br>
 2. Download and Setup MS Visual Studio Compiler 2013 (or any newer version) 
 3. Compile (x86/x64) and Run the code
-4. Open the example project in the folder /TestData/
+4. Open the example project (TestData.dquicklt) in the folder /TestData/
 
 # References
 [1] C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.<br>
