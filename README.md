@@ -1,8 +1,8 @@
-![DQuickLTFit](dpscience.github.com/dquickltfit/TestData/Software.png)
-
 # DQuickLTFit
 Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de)<br><br>
 DQuickLTFit - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm
+
+![DQuickLTFit](/TestData/Software.png)
 
 # About
 DQuickLTFit software is written in C++ (Qt-framework) and implements the MPFIT C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
