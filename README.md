@@ -1,3 +1,5 @@
+![DQuickLTFit](dpscience.github.com/dquickltfit/TestData/Software.png)
+
 # DQuickLTFit
 Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de)<br><br>
 DQuickLTFit - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm
@@ -21,3 +23,4 @@ The complete form of this license is available at <ref>http://www.gnu.org/licens
 # References
 [1] C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.<br>
 [2] J.J. Moré. in: Springer, Berlin, Heidelberg; 1978: pp. 105–116. doi:10.1007/BFb0067700.
+
