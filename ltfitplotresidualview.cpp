@@ -73,7 +73,7 @@ DSynchronizedDblPlotWindow::DSynchronizedDblPlotWindow(QWidget *parent) :
 
     ui->plotWidget_1->yLeft()->setAxisLabelText("[#]");
     ui->plotWidget_2->xBottom()->setAxisLabelText("Channel [#]");
-    ui->plotWidget_2->yLeft()->setAxisLabelText("Sigma");
+    ui->plotWidget_2->yLeft()->setAxisLabelText("Conv. Level");
     ui->plotWidget_1->xBottom()->setAxisLabelText("");
 
     ui->plotWidget_1->xBottom()->setAxisLabelPosition(plot2DXAxis::middle);
@@ -230,6 +230,9 @@ void DSynchronizedDblPlotWindow::setButtonsVisible(bool visible)
     ui->yAxisRangeButton->setVisible(visible);
     ui->xAxisRangeButton->setVisible(visible);
     ui->saveAsPNGButton->setVisible(visible);
+    ui->saveImageButton->setVisible(visible);
+    ui->line->setVisible(visible);
+    ui->saveFitAndResidualData->setVisible(visible);
 }
 
 void DSynchronizedDblPlotWindow::autoscale()

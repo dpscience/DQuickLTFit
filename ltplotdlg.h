@@ -84,7 +84,7 @@ public slots:
     void setLinearScaling();
     void setLogarithmicScaling();
 
-    void savePlotAsPNG();
+    void savePlotAsImage();
     void exportResidualsFitAndRawData();
 
 private slots:

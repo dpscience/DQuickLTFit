@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setApplicationName("DQuickLTFit");
 
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     QSplashScreen splash;
     splash.setPixmap(QPixmap::fromImage(QImage(":/localImages/Images/PALS.JPG").scaledToWidth(QApplication::desktop()->availableGeometry().width()*0.5)));
     splash.show();

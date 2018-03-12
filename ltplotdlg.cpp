@@ -71,7 +71,7 @@ DFastPlotDlg::DFastPlotDlg(QWidget *parent) :
 
     setStyleSheet("background: white");
 
-    connect(ui->widget->imageExportButton(), SIGNAL(clicked()), this, SLOT(savePlotAsPNG()));
+    connect(ui->widget->imageExportButton(), SIGNAL(clicked()), this, SLOT(savePlotAsImage()));
     connect(ui->widget->exportDataButton(), SIGNAL(clicked()), this, SLOT(exportResidualsFitAndRawData()));
     connect(ui->widget->dataPlotView_1()->yLeft(), SIGNAL(scalingPropertyChanged()), this, SLOT(updateROI()));
 }
@@ -221,11 +221,13 @@ void DFastPlotDlg::setLogarithmicScaling()
         ui->widget->changeYAxisScaling();
 }
 
-void DFastPlotDlg::savePlotAsPNG()
+void DFastPlotDlg::savePlotAsImage()
 {
+    showMaximized();
+
     const QString filename = QFileDialog::getSaveFileName(this, tr("Select or type a filename..."),
                                                           PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
-                                                          tr("PNG (*.png)"));
+                                                          tr("PNG (*.png);;JPG (*.jpg);;JPEG (*.jpeg);; BMP (*.bmp);; PPM (*.ppm);; XBM (*.xbm);; XPM (*.xpm)"));
 
     if ( filename.isEmpty() )
         return;
@@ -236,9 +238,9 @@ void DFastPlotDlg::savePlotAsPNG()
 
     QPixmap map = ui->widget->grab();
     QPainter painter(&map);
+    painter.setRenderHint(QPainter::Antialiasing);
 
     QTextOption o;
-    o.setUseDesignMetrics(true);
     o.setWrapMode(QTextOption::NoWrap);
 
     const QString str = PALSProjectManager::sharedInstance()->getFileName() % " [Saved: " % QDateTime::currentDateTime().toString() % "]";
@@ -248,7 +250,7 @@ void DFastPlotDlg::savePlotAsPNG()
 
     painter.drawText(QRectF(20, 20, rect.width(), rect.height()), str, o);
 
-    map.save(filename);
+    map.save(filename, 0, 100);
     ui->widget->setButtonsVisible(true);
 }
 

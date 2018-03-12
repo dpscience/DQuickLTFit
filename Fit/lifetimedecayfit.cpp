@@ -1152,8 +1152,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     resultString = resultString % lineBreak % lineBreak;
 
 
-    /*Device Resolution-Components:*/
-    resultString = resultString % "<nobr><b><big>" % "Device-Resolution-Components [" % "2/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big></nobr>";
+    /*IRF-Components:*/
+    resultString = resultString % "<nobr><b><big>" % "IRF-Components [" % "2/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big></nobr>";
 
     resultString = resultString % tableBorderStart;
 

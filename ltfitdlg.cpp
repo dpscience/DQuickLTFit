@@ -120,23 +120,23 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
 
     connect(ui->actionExport_Current_Result_as_PDF, SIGNAL(triggered()), m_resultWindow, SLOT(printToPDF()));
     connect(ui->actionExport_Current_Result_as_HTML, SIGNAL(triggered()), m_resultWindow, SLOT(printToHTML()));
-    connect(ui->actionSave_Plot_as_Image, SIGNAL(triggered()), m_plotWindow, SLOT(savePlotAsPNG()));
+    connect(ui->actionSave_Plot_as_Image, SIGNAL(triggered()), m_plotWindow, SLOT(savePlotAsImage()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
 
     ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/start");
     ui->pushButtonRunFit->setStatusTip("Fit Lifetime-Data...");
 
-    ui->actionExport_Current_Result_as_PDF->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/pdfExport.svg", 20, 20))));
-    ui->actionExport_Current_Result_as_HTML->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/htmlExport.svg", 20, 20))));
-    ui->actionSave_Plot_as_Image->setIcon(QIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/pngExport.svg", 20, 20))));
+    ui->actionExport_Current_Result_as_PDF->setIcon(QIcon(":/localImages/Images/pdfExport.svg"));
+    ui->actionExport_Current_Result_as_HTML->setIcon(QIcon(":/localImages/Images/htmlExport.svg"));
+    ui->actionSave_Plot_as_Image->setIcon(QIcon(":/localImages/Images/pngExport.svg"));
 
-    ui->actionLoad->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/open.svg", 20, 20)));
-    ui->actionSave->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/save.svg", 20, 20)));
-    ui->actionSaveAs->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/save.svg", 20, 20)));
-    ui->actionNew->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/new.svg", 20, 20)));
-    ui->actionImport->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/plot.svg", 20, 20)));
+    ui->actionLoad->setIcon(QIcon(":/localImages/Images/open.svg"));
+    ui->actionSave->setIcon(QIcon(":/localImages/Images/save.svg"));
+    ui->actionSaveAs->setIcon(QIcon(":/localImages/Images/save.svg"));
+    ui->actionNew->setIcon(QIcon(":/localImages/Images/new.svg"));
+    ui->actionImport->setIcon(QIcon(":/localImages/Images/plot.svg"));
     ui->actionAbout->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
-    ui->actionOpen_Calculator->setIcon(QPixmap::fromImage(DSVGImage::getImage(":/localImages/Images/scale.svg", 20, 20)));
+    ui->actionOpen_Calculator->setIcon(QIcon(":/localImages/Images/scale.svg"));
 
     QPixmap redPixmap(20, 20), greenPixmap(20, 20), bluePixmap(20, 20);
     redPixmap.fill(Qt::red);
@@ -762,18 +762,18 @@ void DFastLTFitDlg::updateWindowTitle()
 {
     if ( !PALSProjectManager::sharedInstance()->getFileName().isEmpty() )
     {
-        this->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
-        m_plotWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
-        m_resultWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+        this->setWindowTitle("Scope - " % VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+        m_plotWindow->setWindowTitle("Plot - " % VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
+        m_resultWindow->setWindowTitle("Results - " % VERSION_STRING_AND_PROGRAM_NAME % " - " % PALSProjectManager::sharedInstance()->getFileName());
     }
     else
     {
-        this->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
-        m_plotWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
-        m_resultWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+        this->setWindowTitle("Scope - " % VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+        m_plotWindow->setWindowTitle("Plot - " % VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
+        m_resultWindow->setWindowTitle("Results - " % VERSION_STRING_AND_PROGRAM_NAME % " - <empty project>");
     }
 
-    m_calculatorWindow->setWindowTitle(VERSION_STRING_AND_PROGRAM_NAME % " - Calculator");
+    m_calculatorWindow->setWindowTitle("Calculator - " % VERSION_STRING_AND_PROGRAM_NAME);
 }
 
 void DFastLTFitDlg::updateLastProjectActionList()
@@ -824,12 +824,14 @@ void DFastLTFitDlg::disablePDFExport()
 
 void DFastLTFitDlg::showAbout()
 {
-    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>(C) Copyright 2016-2018 by Danny Petschke<br>All rights reserved.<br><br>";
+    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>(C) Copyright 2016-2018 by Danny Petschke.<br>All rights reserved.<br><br>";
+    const QString contact = "contact: <a href=\"danny.petschke@uni-wuerzburg.de\">danny.petschke@uni-wuerzburg.de</a><br><br>";
+
     const QString license = "<nobr>Fit-algorithm provided by: <br>MPFIT: A MINPACK-1 Least Squares Fitting Library in C</nobr><br><br>";
     const QString license2 = "<nobr>Icons provided by: <br>https://www.flaticon.com (flaticon)</nobr><br><br>";
     const QString license3 = "<nobr>Logo designed by Hannah Heil</nobr>";
 
-    QMessageBox::about(this, "DQuickLTFit", text % license % license2 % license3);
+    QMessageBox::about(this, "DQuickLTFit", text % contact % license % license2 % license3);
 }
 
 void DFastLTFitDlg::instantPreview()
