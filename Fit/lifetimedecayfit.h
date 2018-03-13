@@ -46,8 +46,7 @@
 
 typedef enum {
     no_Weighting = 0,
-    //yvariance_Weighting
-    ysquare_Weighting = 1,
+    yvariance_Weighting = 1,
     yerror_Weighting = 2
 } residualWeighting;
 

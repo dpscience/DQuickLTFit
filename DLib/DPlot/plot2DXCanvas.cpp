@@ -220,8 +220,10 @@ void plot2DXCanvas::drawLine(const QList<QPoint> &pixelList,
 {
     QPainterPath path;
 
-    for ( int i = 0 ; i < pixelList.size()-1 ; i ++ ){
-        path.moveTo(pixelList.at(i));
+    for ( int i = 0 ; i < pixelList.size() - 1 ; i ++ ){
+        if ( i == 0 )
+            path.moveTo(pixelList.at(i));
+
         path.lineTo(pixelList.at(i+1));
     }
 

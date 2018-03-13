@@ -140,30 +140,32 @@ ParameterListView::ParameterListView(QWidget *parent) :
     ui->checkBox_FirstChannelBkgrd->setToolTip("<nobr>Using first Channels of ROI for Background Calculation?</nobr>");
 
     ui->spinBox_iterations->setToolTip("<nobr>Maximum Count of Iterations used to converge in &#967;<sup>2</sup></nobr>");
-    ui->doubleSpinBox_channelResolution->setToolTip("<nobr>Type here the Channel Resolution [ps/Channel]</nobr>");
+    ui->doubleSpinBox_channelResolution->setToolTip("<nobr>Type here the Channel Resolution [ps]</nobr>");
 
     ui->doubleSpinBox_background->setToolTip("<nobr>Type here the Background Counts or calculate it.</nobr>");
 
     ui->widget->setToolTip("<nobr>Select the Region of Interest (ROI).<br>Data outside ROI will be ignored by the Fit.</nobr>");
 
 #if defined(Q_OS_WIN)
-    ui->labelBGCounts->setFont(WINDOWS_FONT(10));
-    ui->labelChnResolution->setFont(WINDOWS_FONT(10));
-    ui->labelLstChnOfROI->setFont(WINDOWS_FONT(10));
-    ui->labelMaxIterations->setFont(WINDOWS_FONT(10));
-    ui->labelUnits->setFont(WINDOWS_FONT(10));
-    ui->checkBox_FirstChannelBkgrd->setFont(WINDOWS_FONT(10));
+    ui->labelBGCounts->setFont(WINDOWS_FONT(9));
+    ui->labelChnResolution->setFont(WINDOWS_FONT(9));
+    ui->labelLstChnOfROI->setFont(WINDOWS_FONT(9));
+    ui->labelMaxIterations->setFont(WINDOWS_FONT(9));
+    ui->checkBox_FirstChannelBkgrd->setFont(WINDOWS_FONT(9));
+    ui->label->setFont(WINDOWS_FONT(9));
+    ui->label_2->setFont(WINDOWS_FONT(9));
+    ui->label_3->setFont(WINDOWS_FONT(9));
 
-    ui->groupBox->setFont(WINDOWS_FONT(12));
-    ui->groupBox_2->setFont(WINDOWS_FONT(12));
-    ui->groupBox_3->setFont(WINDOWS_FONT(12));
+    ui->groupBox->setFont(WINDOWS_FONT(11));
+    ui->groupBox_2->setFont(WINDOWS_FONT(11));
+    ui->groupBox_3->setFont(WINDOWS_FONT(11));
 
-    ui->doubleSpinBox_background->setFont(WINDOWS_FONT(10));
-    ui->doubleSpinBox_channelResolution->setFont(WINDOWS_FONT(10));
-    ui->spinBox_backgroundChannel->setFont(WINDOWS_FONT(10));
-    ui->spinBox_iterations->setFont(WINDOWS_FONT(10));
+    ui->doubleSpinBox_background->setFont(WINDOWS_FONT(9));
+    ui->doubleSpinBox_channelResolution->setFont(WINDOWS_FONT(9));
+    ui->spinBox_backgroundChannel->setFont(WINDOWS_FONT(9));
+    ui->spinBox_iterations->setFont(WINDOWS_FONT(9));
 
-    ui->tabWidget->setFont(WINDOWS_FONT(10));
+    ui->tabWidget->setFont(WINDOWS_FONT(9));
 #endif
 }
 
@@ -1132,6 +1134,13 @@ PALSSourceTableWidgetItemCollector::PALSSourceTableWidgetItemCollector(PALSFitPa
 
     connect(tableWidget,  SIGNAL(cellChanged(int, int)), this, SLOT(updateValue(int, int)));
     connect(m_fixedItem,  SIGNAL(stateChanged(CheckBoxTableWidgetItem*)), this, SLOT(checkBoxStateChanged(CheckBoxTableWidgetItem*)));
+
+#if defined(Q_OS_WIN)
+    tableWidget->setFont(WINDOWS_FONT(10));
+    QFont font = tableWidget->font();
+    font.setBold(true);
+    tableWidget->setFont(font);
+#endif
 }
 
 PALSSourceTableWidgetItemCollector::~PALSSourceTableWidgetItemCollector() {}
@@ -1254,6 +1263,13 @@ PALSSampleTableWidgetItemCollector::PALSSampleTableWidgetItemCollector(PALSFitPa
 
     connect(tableWidget,  SIGNAL(cellChanged(int, int)), this, SLOT(updateValue(int, int)));
     connect(m_fixedItem,  SIGNAL(stateChanged(CheckBoxTableWidgetItem*)), this, SLOT(checkBoxStateChanged(CheckBoxTableWidgetItem*)));
+
+#if defined(Q_OS_WIN)
+    tableWidget->setFont(WINDOWS_FONT(10));
+    QFont font = tableWidget->font();
+    font.setBold(true);
+    tableWidget->setFont(font);
+#endif
 }
 
 PALSSampleTableWidgetItemCollector::~PALSSampleTableWidgetItemCollector() {}
@@ -1416,6 +1432,13 @@ PALSDeviceTableWidgetItemCollector::PALSDeviceTableWidgetItemCollector(PALSFitPa
 
     connect(tableWidget,  SIGNAL(cellChanged(int, int)), this, SLOT(updateValue(int, int)));
     connect(m_fixedItem,  SIGNAL(stateChanged(CheckBoxTableWidgetItem*)), this, SLOT(checkBoxStateChanged(CheckBoxTableWidgetItem*)));
+
+#if defined(Q_OS_WIN)
+    tableWidget->setFont(WINDOWS_FONT(10));
+    QFont font = tableWidget->font();
+    font.setBold(true);
+    tableWidget->setFont(font);
+#endif
 }
 
 PALSDeviceTableWidgetItemCollector::~PALSDeviceTableWidgetItemCollector() {}

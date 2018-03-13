@@ -43,17 +43,17 @@ double weightedResidual(double y, double yi, double erryi, int weightingCode)
         residual = weight*(yi - y);
         break;
 
-    case 1: //ysquare weighting:
-        weight = yi*yi;
+    case 1: //y-variance weighting:
+        weight = 1.0/yi;
 
         residual = weight*(yi - y);
         break;
 
-    case 2: //yerror weighting:
+    case 2: //y-error weighting:
         if (qFuzzyCompare(yi, 0.0) || yi < 0)
             weight = 1;
         else
-            weight = yi/sqrt(yi);
+            weight = 1.0/sqrt(yi);
 
         residual = weight*(yi - y);
         break;
@@ -234,7 +234,7 @@ void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
 
      v.countOfDeviceResolutionParams = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();
 
-     v.weighting = (dataStructure->getFitSetPtr()->usingYVariance()?residualWeighting::yerror_Weighting:residualWeighting::no_Weighting);
+     v.weighting = (dataStructure->getFitSetPtr()->usingYVariance()?residualWeighting::yvariance_Weighting:residualWeighting::no_Weighting);
 
     //Parameter constraints:
     mp_par *paramContraints = new mp_par[paramCnt];

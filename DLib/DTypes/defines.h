@@ -51,6 +51,7 @@
 #include <QList>
 #include <QStringBuilder>
 #include <QtSvg/QSvgRenderer>
+#include <QSvgWidget>
 #include <QtXml/QDomDocument>
 #include <QValidator>
 #include <QLayout>

@@ -41,6 +41,7 @@ class PALSProjectSettingsManager
     DSimpleXMLNode *m_lastPathNode;
     DSimpleXMLNode *m_lastBackgroundChannelRangeNode;
     DSimpleXMLNode *m_resultWindowWasShown;
+    DSimpleXMLNode *m_plotWindowWasShown;
     DSimpleXMLNode *m_backgroundCalculationWithLastChannels;
 
     QStringList m_projectPathList;
@@ -57,6 +58,7 @@ public:
     void setLastBackgroundChannelRange(int range);
     void setBackgroundCalculationFromFirstChannels(bool first);
     void setResultWindowWasShownOnExit(bool on);
+    void setPlotWindowWasShownOnExit(bool on);
 
     QStringList getLastProjectPathList() const;
     bool isLinearLastScaling() const;
@@ -64,6 +66,7 @@ public:
     int getLastBackgroundChannelRange() const;
     bool getBackgroundCalculationFromFirstChannels() const;
     bool getResultWindowWasShownOnExit() const;
+    bool getPlotWindowWasShownOnExit() const;
 
 private:
     PALSProjectSettingsManager();

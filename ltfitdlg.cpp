@@ -184,6 +184,14 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
 
     m_plotWindow->setYRangeData(1, 10000);
 
+    if ( PALSProjectSettingsManager::sharedInstance()->getPlotWindowWasShownOnExit() )
+        m_plotWindow->showMaximized();
+    else
+    {
+        m_plotWindow->show();
+        m_plotWindow->hide();
+    }
+
     if ( PALSProjectSettingsManager::sharedInstance()->getResultWindowWasShownOnExit() )
         m_resultWindow->show();
     else
@@ -192,7 +200,7 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
         m_resultWindow->hide();
     }
 
-    m_plotWindow->show();
+    this->show();
 }
 
 DFastLTFitDlg::~DFastLTFitDlg()
@@ -242,6 +250,11 @@ void DFastLTFitDlg::closeEvent(QCloseEvent *event)
         PALSProjectSettingsManager::sharedInstance()->setResultWindowWasShownOnExit(true);
     else
         PALSProjectSettingsManager::sharedInstance()->setResultWindowWasShownOnExit(false);
+
+    if ( m_plotWindow->isVisible() )
+        PALSProjectSettingsManager::sharedInstance()->setPlotWindowWasShownOnExit(true);
+    else
+        PALSProjectSettingsManager::sharedInstance()->setPlotWindowWasShownOnExit(false);
 
     PALSProjectSettingsManager::sharedInstance()->save();
 
