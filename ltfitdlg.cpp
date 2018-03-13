@@ -75,7 +75,13 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     m_resultWindow = new DFastResultDlg;
     m_calculatorWindow = new DFastCalculatorDlg;
 
+    m_fitEngineThread = new QThread;
     m_fitEngine = new LifeTimeDecayFitEngine;
+    m_fitEngine->moveToThread(m_fitEngineThread);
+
+    connect(m_fitEngineThread, SIGNAL(started()), m_fitEngine, SLOT(fit()));
+    connect(ui->pushButtonRunFit, SIGNAL(clicked()), this, SLOT(runFit()));
+    connect(m_fitEngine, SIGNAL(finished()), this, SLOT(fitHasFinished()));
 
     m_chiSquareLabel = new QLabel;
     m_integralCountInROI = new QLabel;
@@ -90,9 +96,6 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     connect(ui->actionNew, SIGNAL(triggered()), this, SLOT(newProject()));
     connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(saveProjectAs()));
     connect(ui->actionImport, SIGNAL(triggered()), this, SLOT(importASCII()));
-
-    connect(ui->pushButtonRunFit, SIGNAL(clicked()), this, SLOT(runFit()));
-    connect(m_fitEngine, SIGNAL(finished()), this, SLOT(fitHasFinished()));
 
     connect(ui->widget, SIGNAL(dataChanged()), this, SLOT(instantPreview()));
 
@@ -223,9 +226,13 @@ DFastLTFitDlg::~DFastLTFitDlg()
 
     DDELETE_SAFETY(m_resultWindow);
     DDELETE_SAFETY(m_plotWindow);
+    DDELETE_SAFETY(m_calculatorWindow);
 
     DDELETE_SAFETY(m_chiSquareLabel);
     DDELETE_SAFETY(m_integralCountInROI);
+
+    DDELETE_SAFETY(m_fitEngine);
+    DDELETE_SAFETY(m_fitEngineThread);
 
     DDELETE_SAFETY(ui);
 }
@@ -754,12 +761,19 @@ void DFastLTFitDlg::runFit()
         return;
     }
 
-    int status = 0;
-    m_fitEngine->fit(PALSProjectManager::sharedInstance()->getDataStructure(), &status);
+    setEnabled(false);
+    ui->widget->setEnabled(false);
+
+    m_fitEngine->init(PALSProjectManager::sharedInstance()->getDataStructure());
+    m_fitEngineThread->start();
 }
 
 void DFastLTFitDlg::fitHasFinished()
 {
+    m_fitEngineThread->exit(0);
+    setEnabled(true);
+    ui->widget->setEnabled(true);
+
     instantPreview();
 
     m_plotWindow->clearFitData();

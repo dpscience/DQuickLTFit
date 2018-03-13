@@ -119,6 +119,7 @@ private:
     DFastCalculatorDlg *m_calculatorWindow;
 
     LifeTimeDecayFitEngine *m_fitEngine;
+    QThread *m_fitEngineThread;
 
     QLabel *m_chiSquareLabel;
     QLabel *m_integralCountInROI;

@@ -83,7 +83,8 @@ public:
     LifeTimeDecayFitEngine();
 
 public slots:
-    void fit(PALSDataStructure *dataStructure, int *status);
+    void init(PALSDataStructure *dataStructure);
+    void fit();
 
 public:
     QList<QPointF> getFitPlotPoints() const;
@@ -97,6 +98,7 @@ signals:
 
 private:
     QList<QPointF> m_fitPlotSet;
+    PALSDataStructure *m_dataStructure;
 };
 
 class PALSFitErrorCodeStringBuilder

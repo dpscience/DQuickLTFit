@@ -136,32 +136,26 @@ int lifeTimeDecaySum(int dataCnt, int paramCnt, double *fitParamArray, double *d
 }
 
 
-LifeTimeDecayFitEngine::LifeTimeDecayFitEngine() {}
+LifeTimeDecayFitEngine::LifeTimeDecayFitEngine() :
+    m_dataStructure(nullptr) {}
 
-void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
+void LifeTimeDecayFitEngine::init(PALSDataStructure *dataStructure)
 {
-    if ( !status )
-    {
-        return;
-    }
+    m_dataStructure = dataStructure;
+}
+
+void LifeTimeDecayFitEngine::fit()
+{
+    PALSDataStructure *dataStructure = m_dataStructure;
 
     if ( !dataStructure )
-    {
-        *status = -60;
         return;
-    }
 
     if ( !dataStructure->getDataSetPtr() || !dataStructure->getFitSetPtr() )
-    {
-        *status = -61;
         return;
-    }
 
     if ( dataStructure->getDataSetPtr()->getLifeTimeData().isEmpty() )
-    {
-        *status = -62;
         return;
-    }
 
     //initialize the data-set:
     const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1;
@@ -727,7 +721,7 @@ void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
                               (void*) &v,
                               &result);
 
-    *status = stat;
+    DUNUSED_PARAM(stat);
 
     updateDataStructureFromResult(dataStructure, &result, &v, params);
 
