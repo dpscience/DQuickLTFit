@@ -61,6 +61,8 @@ public:
 
     void updateParamterList();
 
+    void setEnabled(bool enable);
+
 private:
     void initializeSourceTableWidget();
     void initializeSampleTableWidget();

@@ -95,6 +95,8 @@ public slots:
 
     void calculateBackground();
 
+    void enableGUI(bool enable);
+
 private slots:
     void fitHasFinished();
     void updateWindowTitle();

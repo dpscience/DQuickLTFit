@@ -928,6 +928,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString endHtml = "</font>";
 
     const QString projectName("<nobr><b>Project:</b></nobr>");
+    const QString asciiFileName("<nobr><b>Raw-Data:</b></nobr>");
 
     const QString fitFinishCode("<nobr><b>Finish-Code:</b></nobr>");
 
@@ -985,7 +986,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     resultString = resultString % tableStart;
 
-    /*project-name:*/   resultString = resultString % startRow % startContent % projectName % finishContent % startContent % PALSProjectManager::sharedInstance()->getFileName() % finishContent % finishRow % lineBreak;
+    /*project-name:*/   resultString = resultString % startRow % startContent % projectName % finishContent % startContent % PALSProjectManager::sharedInstance()->getFileName() % finishContent % finishRow;
+    /*ascii-file-name:*/   resultString = resultString % startRow % startContent % asciiFileName % finishContent % startContent % ((PALSProjectManager::sharedInstance()->getASCIIDataName()==QString("unknown"))?QString("unknown source"):PALSProjectManager::sharedInstance()->getASCIIDataName()) % finishContent % finishRow % lineBreak;
 
     /*finish code and time/date:*/resultString = resultString % startRow % startContent % fitFinishCode % finishContent % startContent % fitFinishCodeVal % finishContent % finishRow % lineBreak;
 

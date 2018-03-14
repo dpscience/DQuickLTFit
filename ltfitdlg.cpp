@@ -126,8 +126,13 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     connect(ui->actionSave_Plot_as_Image, SIGNAL(triggered()), m_plotWindow, SLOT(savePlotAsImage()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
 
-    ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/start");
+    ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/arrowRight");
     ui->pushButtonRunFit->setStatusTip("Fit Lifetime-Data...");
+
+#if defined(Q_OS_WIN)
+    ui->label->setFont(WINDOWS_FONT(10));
+    ui->label_2->setFont(WINDOWS_FONT(10));
+#endif
 
     ui->actionExport_Current_Result_as_PDF->setIcon(QIcon(":/localImages/Images/pdfExport.svg"));
     ui->actionExport_Current_Result_as_HTML->setIcon(QIcon(":/localImages/Images/htmlExport.svg"));
@@ -684,6 +689,8 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
         }
     }
 
+    PALSProjectManager::sharedInstance()->setASCIIDataName(fileName);
+
     updateWindowTitle();
 }
 
@@ -761,8 +768,7 @@ void DFastLTFitDlg::runFit()
         return;
     }
 
-    setEnabled(false);
-    ui->widget->setEnabled(false);
+    enableGUI(false);
 
     m_fitEngine->init(PALSProjectManager::sharedInstance()->getDataStructure());
     m_fitEngineThread->start();
@@ -771,8 +777,6 @@ void DFastLTFitDlg::runFit()
 void DFastLTFitDlg::fitHasFinished()
 {
     m_fitEngineThread->exit(0);
-    setEnabled(true);
-    ui->widget->setEnabled(true);
 
     instantPreview();
 
@@ -783,6 +787,8 @@ void DFastLTFitDlg::fitHasFinished()
     m_plotWindow->addResidualData(PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getResiduals());
 
     m_resultWindow->addResultTabFromLastFit();
+
+    enableGUI(true);
 }
 
 void DFastLTFitDlg::updateWindowTitle()
@@ -1116,4 +1122,24 @@ void DFastLTFitDlg::changeFitTraceVisibility(bool visible)
 void DFastLTFitDlg::calculateBackground()
 {
     ((ParameterListView*)ui->widget)->updateBackgroundValue();
+}
+
+void DFastLTFitDlg::enableGUI(bool enable)
+{
+    setEnabled(enable);
+    ui->widget->setEnabled(enable);
+    ui->pushButtonRunFit->enableWidget(enable);
+
+    if (enable) {
+        ui->pushButtonRunFit->setStatusTip("Fit Lifetime-Data...");
+        ui->label->setText("Fit");
+        ui->label_2->setText("Data");
+        ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/arrowRight");
+    }
+    else {
+        ui->pushButtonRunFit->setStatusTip("Fit is Running..");
+        ui->label->setText("Fit is Running");
+        ui->label_2->setText("!");
+        ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/fit");
+    }
 }

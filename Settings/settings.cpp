@@ -35,11 +35,13 @@ PALSProject::PALSProject()
 
     m_lastSaveTimeNode = new DSimpleXMLNode("last-save-date_time");
     m_projectNameNode = new DSimpleXMLNode("title");
+    m_asciiDataNameNode = new DSimpleXMLNode("ascii-data");
 
     m_lastSaveTimeNode->setValue(QDateTime::currentDateTime());
     m_projectNameNode-> setValue("undefined project-title");
+    m_asciiDataNameNode->setValue("unknown");
 
-    *m_rootNode << m_lastSaveTimeNode << m_projectNameNode << m_parentNode;
+    *m_rootNode << m_lastSaveTimeNode << m_projectNameNode << m_asciiDataNameNode << m_parentNode;
 }
 
 PALSProject::~PALSProject()
@@ -55,6 +57,7 @@ PALSProject::~PALSProject()
 
     DDELETE_SAFETY(m_lastSaveTimeNode);
     DDELETE_SAFETY(m_projectNameNode);
+    DDELETE_SAFETY(m_asciiDataNameNode);
     DDELETE_SAFETY(m_parentNode);
     DDELETE_SAFETY(m_rootNode);
 }
@@ -95,6 +98,11 @@ bool PALSProject::load(const DString &projectPath)
 
         if ( ok ) setName(safeTag.getValue().toString());
         else      setName(DString("undefined project-title"));
+
+        safeTag = projectContent.getTag("project").getTag(m_asciiDataNameNode, &ok);
+
+        if ( ok ) setASCIIDataName(safeTag.getValue().toString());
+        else      setASCIIDataName(DString("unknown"));
 
         ok = true;
         int dataStructCnt = 0;
@@ -138,6 +146,11 @@ void PALSProject::setLastSaveTime(const QDateTime &dateTime)
 void PALSProject::setName(const DString &name)
 {
     m_projectNameNode->setValue(name);
+}
+
+void PALSProject::setASCIIDataName(const DString &name)
+{
+    m_asciiDataNameNode->setValue(name);
 }
 
 void PALSProject::addDataStructure(PALSDataStructure *dataStructure)
@@ -198,6 +211,11 @@ DString PALSProject::getName() const
     return (DString)m_projectNameNode->getValue().toString();
 }
 
+DString PALSProject::getASCIIDataName() const
+{
+    return (DString)m_asciiDataNameNode->getValue().toString();
+}
+
 void PALSProject::clear()
 {
     //clear all old project settings:
@@ -211,6 +229,7 @@ void PALSProject::clear()
 
     DDELETE_SAFETY(m_lastSaveTimeNode);
     DDELETE_SAFETY(m_projectNameNode);
+    DDELETE_SAFETY(m_asciiDataNameNode);
     DDELETE_SAFETY(m_parentNode);
     DDELETE_SAFETY(m_rootNode);
 
@@ -218,11 +237,13 @@ void PALSProject::clear()
     m_parentNode = new DSimpleXMLNode("data-structure");
     m_lastSaveTimeNode = new DSimpleXMLNode("last-save-date_time");
     m_projectNameNode = new DSimpleXMLNode("title");
+    m_asciiDataNameNode = new DSimpleXMLNode("ascii-data");
 
     m_lastSaveTimeNode->setValue(QDateTime::currentDateTime());
     m_projectNameNode ->setValue("undefined project-title");
+    m_asciiDataNameNode->setValue("unknown");
 
-    *m_rootNode << m_lastSaveTimeNode << m_projectNameNode << m_parentNode;
+    *m_rootNode << m_lastSaveTimeNode << m_projectNameNode << m_asciiDataNameNode << m_parentNode;
 }
 
 

@@ -125,7 +125,8 @@ bool DSVGButton::event(QEvent *event)
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
 
-        emit clicked();
+        if (m_enabled)
+            emit clicked();
     }
 
     return QWidget::event(event);
@@ -334,7 +335,8 @@ bool DSVGToolButton::event(QEvent *event)
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
 
-        emit clicked();
+        if (m_enabled)
+            emit clicked();
     }
 
     return QToolButton::event(event);

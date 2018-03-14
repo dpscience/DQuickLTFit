@@ -62,6 +62,7 @@ class PALSProject
     DSimpleXMLNode *m_parentNode;
     DSimpleXMLNode *m_lastSaveTimeNode;
     DSimpleXMLNode *m_projectNameNode;
+    DSimpleXMLNode *m_asciiDataNameNode;
 
     QList<PALSDataStructure*> m_dataStructureList;
 
@@ -79,6 +80,7 @@ public:
 SETTINGS_WRITE
     void setLastSaveTime(const QDateTime& dateTime);
     void setName(const DString& name);
+    void setASCIIDataName(const DString& name);
 
     void addDataStructure(PALSDataStructure* dataStructure);
     void removeDataStructure(unsigned int index);
@@ -89,6 +91,7 @@ SETTINGS_READ
     PALSDataStructure* getDataStructureAt(unsigned int index) const;
     QDateTime getLastSaveTime() const;
     DString getName() const;
+    DString getASCIIDataName() const;
 
 private:
     void clear();

@@ -256,6 +256,21 @@ void ParameterListView::updateParamterList()
     emit dataChanged();
 }
 
+void ParameterListView::setEnabled(bool enable)
+{
+    ui->pushButtonAdd_Source->enableWidget(enable);
+    ui->pushButtonAdd_Sample->enableWidget(enable);
+    ui->pushButtonAdd_Device->enableWidget(enable);
+
+    ui->pushButtonRemove_Source->enableWidget(enable);
+    ui->pushButtonRemove_Sample->enableWidget(enable);
+    ui->pushButtonRemove_Device->enableWidget(enable);
+
+    ui->pushButton_Background->enableWidget(enable);
+
+    QWidget::setEnabled(enable);
+}
+
 void ParameterListView::initializeSourceTableWidget()
 {
     if ( !m_fitSet )

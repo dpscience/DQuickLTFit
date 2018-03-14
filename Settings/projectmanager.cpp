@@ -73,6 +73,22 @@ QString PALSProjectManager::getFileName() const
     return m_fileName;
 }
 
+void PALSProjectManager::setASCIIDataName(const QString &file)
+{
+    if (!m_project)
+        return;
+
+    m_project->setASCIIDataName(file);
+}
+
+QString PALSProjectManager::getASCIIDataName() const
+{
+    if (!m_project)
+        return QString("unknown");
+
+    return m_project->getASCIIDataName();
+}
+
 void PALSProjectManager::setChannelRanges(int min, int max)
 {
     m_minChannel = min;
