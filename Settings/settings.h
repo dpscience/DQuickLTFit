@@ -128,13 +128,17 @@ SETTINGS_READ
 class PALSDataSet
 {
     DSimpleXMLNode *m_parentNode;
-    DSimpleXMLNode *m_xyDataNode;
+    DSimpleXMLNode *m_xyDataNode; // << binned data
+    DSimpleXMLNode *m_xyRawDataNode; // << non-binned data
     DSimpleXMLNode *m_fitDataNode;
     DSimpleXMLNode *m_residualNode;
     DSimpleXMLNode *m_colorResidualsNode;
     DSimpleXMLNode *m_colorDataNode;
 
-    QList<QPointF> m_xyData;
+    DSimpleXMLNode *m_xyDataBinFac;
+
+    QList<QPointF> m_xyData; // << binned data
+    QList<QPointF> m_xyRawData; // << non-binned data
     QList<QPointF> m_fitData;
     QList<QPointF> m_residualData;
 
@@ -150,19 +154,24 @@ public:
     void clearResidualData();
 
 SETTINGS_WRITE
-    void setLifeTimeData(const QList<QPointF>& dataSet);
+    void setLifeTimeData(const QList<QPointF>& dataSet); // << binned data
+    void setLifeTimeRawData(const QList<QPointF>& rawDataSet); // << non-binned data
     void setFitData(const QList<QPointF>& dataSet);
     void setResiduals(const QList<QPointF>& residuals);
     void setLifeTimeDataColor(const DColor& color);
     void setResidualsColor(const DColor& color);
+    void setBinFactor(unsigned int binFac);
 
 SETTINGS_READ
-    QList<QPointF> getLifeTimeData() const;
+    QList<QPointF> getLifeTimeData() const; // << binned data
+    QList<QPointF> getLifeTimeRawData() const; // << non-binned data
     QList<QPointF> getFitData() const;
     QList<QPointF> getResiduals() const;
 
     DColor getLifeTimeDataColor() const;
     DColor getResidualsColor() const;
+
+    unsigned int getBinFactor() const;
 };
 
 

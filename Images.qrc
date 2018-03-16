@@ -19,7 +19,6 @@
         <file>Images/scaling_hover.svg</file>
         <file>Images/new.svg</file>
         <file>Images/open.svg</file>
-        <file>Images/plot.svg</file>
         <file>Images/save.svg</file>
         <file>Images/pdfExport_click.svg</file>
         <file>Images/pdfExport_default.svg</file>
@@ -35,12 +34,7 @@
         <file>Images/DfastLTfit_icon2.png</file>
         <file>Images/IconFlat.svg</file>
         <file>Images/PALS.JPG</file>
-        <file>Images/PMs.JPG</file>
-        <file>Images/start_click.svg</file>
-        <file>Images/start_default.svg</file>
-        <file>Images/start_hover.svg</file>
         <file>Images/scale.svg</file>
-        <file alias="stack">Images/database.svg</file>
         <file>Images/save_click.svg</file>
         <file>Images/save_hover.svg</file>
         <file>Images/save_default.svg</file>
@@ -48,5 +42,7 @@
         <file>Images/htmlExport_hover.svg</file>
         <file>Images/htmlExport_default.svg</file>
         <file>Images/htmlExport.svg</file>
+        <file>Images/calculator73.svg</file>
+        <file>Images/plot.svg</file>
     </qresource>
 </RCC>

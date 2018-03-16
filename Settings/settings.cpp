@@ -477,15 +477,18 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent)
 {
     m_parentNode = new DSimpleXMLNode("data");
     m_xyDataNode = new DSimpleXMLNode("lt-data");
+    m_xyRawDataNode = new DSimpleXMLNode("lt-data-raw");
     m_fitDataNode = new DSimpleXMLNode("lt-fit-data");
     m_residualNode = new DSimpleXMLNode("lt-residuals");
     m_colorResidualsNode = new DSimpleXMLNode("residuals-color");
     m_colorDataNode = new DSimpleXMLNode("lt-color");
+    m_xyDataBinFac = new DSimpleXMLNode("bin-factor");
 
     m_colorResidualsNode->setValue(QColor(Qt::red) .colorNames().at(0));
     m_colorDataNode->setValue(QColor(Qt::blue).colorNames().at(0));
+    m_xyDataBinFac->setValue(1);
 
-    *m_parentNode << m_xyDataNode << m_fitDataNode << m_residualNode << m_colorDataNode << m_colorResidualsNode;
+    *m_parentNode << m_xyRawDataNode << m_xyDataNode << m_xyDataBinFac << m_fitDataNode << m_residualNode << m_colorDataNode << m_colorResidualsNode;
     *(parent->getParent()) << m_parentNode;
 }
 
@@ -493,15 +496,23 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
 {
     m_parentNode = new DSimpleXMLNode("data");
     m_xyDataNode = new DSimpleXMLNode("lt-data");
+    m_xyRawDataNode = new DSimpleXMLNode("lt-data-raw");
     m_fitDataNode = new DSimpleXMLNode("lt-fit-data");
     m_residualNode = new DSimpleXMLNode("lt-residuals");
     m_colorResidualsNode = new DSimpleXMLNode("residuals-color");
     m_colorDataNode = new DSimpleXMLNode("lt-color");
+    m_xyDataBinFac = new DSimpleXMLNode("bin-factor");
 
     bool ok = false;
 
     DSimpleXMLTag safeTag = tag.getTag("data").getTag("lt-data", &ok);
     if ( ok ) m_xyDataNode->setValue(safeTag.getValue());
+
+    safeTag = tag.getTag("data").getTag("lt-data-raw", &ok);
+    if ( ok ) m_xyRawDataNode->setValue(safeTag.getValue());
+
+    safeTag = tag.getTag("data").getTag("bin-factor", &ok);
+    if ( ok ) m_xyDataBinFac->setValue(safeTag.getValue());
 
     safeTag = tag.getTag("data").getTag("lt-fit-data", &ok);
     if ( ok ) m_fitDataNode->setValue(safeTag.getValue());
@@ -519,10 +530,12 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
 
 
     const QStringList xyDataStringList = DString(m_xyDataNode->getValue().toString()).parseBetween2("{", "}");
+    const QStringList xyRawDataStringList = DString(m_xyRawDataNode->getValue().toString()).parseBetween2("{", "}");
     const QStringList xyFitDataStringList = DString(m_fitDataNode->getValue().toString()).parseBetween2("{", "}");
     const QStringList residualDataStringList = DString(m_residualNode->getValue().toString()).parseBetween2("{", "}");
 
     m_xyData.clear();
+    m_xyRawData.clear();
     m_fitData.clear();
     m_residualData.clear();
 
@@ -536,6 +549,19 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
             const double y = list.at(1).toDouble();
 
             m_xyData.append(QPointF(x, y));
+        }
+    }
+
+    for ( int i = 0 ; i < xyRawDataStringList.size() ; ++ i )
+    {
+        const QStringList list = xyRawDataStringList.at(i).split("|");
+
+        if ( list.size() == 2 )
+        {
+            const double x = list.at(0).toDouble();
+            const double y = list.at(1).toDouble();
+
+            m_xyRawData.append(QPointF(x, y));
         }
     }
 
@@ -565,13 +591,15 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
         }
     }
 
-    *m_parentNode << m_xyDataNode << m_fitDataNode << m_residualNode << m_colorDataNode << m_colorResidualsNode;
+    *m_parentNode << m_xyRawDataNode << m_xyDataNode << m_xyDataBinFac << m_fitDataNode << m_residualNode << m_colorDataNode << m_colorResidualsNode;
     (*parent->getParent()) << m_parentNode;
 }
 
 PALSDataSet::~PALSDataSet()
 {
     DDELETE_SAFETY(m_xyDataNode);
+    DDELETE_SAFETY(m_xyRawDataNode);
+    DDELETE_SAFETY(m_xyDataBinFac);
     DDELETE_SAFETY(m_fitDataNode);
     DDELETE_SAFETY(m_residualNode);
     DDELETE_SAFETY(m_colorResidualsNode);
@@ -588,6 +616,9 @@ void PALSDataSet::clearFitData()
 {
     m_xyData.clear();
     m_xyDataNode->setValue("");
+
+    m_xyRawData.clear();
+    m_xyRawDataNode->setValue("");
 }
 
 void PALSDataSet::clearResidualData()
@@ -605,6 +636,17 @@ void PALSDataSet::setLifeTimeData(const QList<QPointF> &dataSet)
         dataString += "{" + QVariant(m_xyData[i].x()).toString() + "|" + QVariant(m_xyData[i].y()).toString() + "}";
 
     m_xyDataNode->setValue(dataString);
+}
+
+void PALSDataSet::setLifeTimeRawData(const QList<QPointF> &rawDataSet)
+{
+    m_xyRawData = rawDataSet;
+
+    DString dataString;
+    for ( int i = 0 ; i < m_xyRawData.size() ; ++ i )
+        dataString += "{" + QVariant(m_xyRawData[i].x()).toString() + "|" + QVariant(m_xyRawData[i].y()).toString() + "}";
+
+    m_xyRawDataNode->setValue(dataString);
 }
 
 void PALSDataSet::setFitData(const QList<QPointF> &dataSet)
@@ -639,9 +681,19 @@ void PALSDataSet::setResidualsColor(const DColor &color)
     m_colorResidualsNode->setValue(color.colorNames().at(0));
 }
 
+void PALSDataSet::setBinFactor(unsigned int binFac)
+{
+    m_xyDataBinFac->setValue(binFac);
+}
+
 QList<QPointF> PALSDataSet::getLifeTimeData() const
 {
     return m_xyData;
+}
+
+QList<QPointF> PALSDataSet::getLifeTimeRawData() const
+{
+    return m_xyRawData;
 }
 
 QList<QPointF> PALSDataSet::getFitData() const
@@ -662,6 +714,16 @@ DColor PALSDataSet::getLifeTimeDataColor() const
 DColor PALSDataSet::getResidualsColor() const
 {
     return (DColor)QColor(m_colorResidualsNode->getValue().toString());
+}
+
+unsigned int PALSDataSet::getBinFactor() const
+{
+    bool ok = false;
+    int fac = m_xyDataBinFac->getValue().toInt(&ok);
+    if (!ok)
+        fac = 1;
+
+    return fac;
 }
 
 

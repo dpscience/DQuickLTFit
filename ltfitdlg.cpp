@@ -144,7 +144,7 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     ui->actionNew->setIcon(QIcon(":/localImages/Images/new.svg"));
     ui->actionImport->setIcon(QIcon(":/localImages/Images/plot.svg"));
     ui->actionAbout->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
-    ui->actionOpen_Calculator->setIcon(QIcon(":/localImages/Images/scale.svg"));
+    ui->actionOpen_Calculator->setIcon(QIcon(":/localImages/Images/calculator73.svg"));
 
     QPixmap redPixmap(20, 20), greenPixmap(20, 20), bluePixmap(20, 20);
     redPixmap.fill(Qt::red);

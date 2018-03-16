@@ -47,8 +47,8 @@ DSynchronizedDblPlotWindow::DSynchronizedDblPlotWindow(QWidget *parent) :
 
     ui->yAxisRangeButton->setToolTip("Change the Vertical Axis Scaling");
     ui->xAxisRangeButton->setToolTip("Change the Horizontal Axis Scaling");
-    ui->linLogButton->setToolTip("Switch between linear/logarithmic scaling");
-    ui->saveAsPNGButton->setToolTip("Export Plot Window as PNG");
+    ui->linLogButton->setToolTip("Switch between Linear & Logarithmic Scaling");
+    ui->saveAsPNGButton->setToolTip("Export Plot Window as Image");
     ui->saveFitAndResidualData->setToolTip("Export Residuals, Fit- and Raw-Data");
 
     //plot-views:
