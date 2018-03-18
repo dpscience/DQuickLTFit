@@ -62,14 +62,14 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="styleSheet">
@@ -81,14 +81,14 @@
       <widget class="DSVGButton" name="yAxisRangeButton" native="true">
        <property name="minimumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
       </widget>
@@ -97,14 +97,14 @@
       <widget class="DSVGButton" name="linLogButton" native="true">
        <property name="minimumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
       </widget>
@@ -113,14 +113,14 @@
       <widget class="DSVGButton" name="saveAsPNGButton" native="true">
        <property name="minimumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>27</width>
-         <height>27</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
       </widget>
@@ -129,20 +129,23 @@
       <widget class="DSVGButton" name="saveImageButton" native="true">
        <property name="minimumSize">
         <size>
-         <width>25</width>
-         <height>25</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>25</width>
-         <height>25</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
       </widget>
      </item>
      <item>
       <widget class="Line" name="line">
+       <property name="styleSheet">
+        <string notr="true">color: rgb(80,100,120)</string>
+       </property>
        <property name="frameShadow">
         <enum>QFrame::Plain</enum>
        </property>
@@ -155,14 +158,14 @@
       <widget class="DSVGButton" name="saveFitAndResidualData" native="true">
        <property name="minimumSize">
         <size>
-         <width>25</width>
+         <width>24</width>
          <height>24</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>25</width>
-         <height>25</height>
+         <width>24</width>
+         <height>24</height>
         </size>
        </property>
       </widget>

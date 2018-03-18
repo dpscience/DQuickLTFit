@@ -80,6 +80,11 @@ bool PALSProjectSettingsManager::load()
             if ( ok ) m_resultWindowWasShown->setValue(valueTag.getValue());
             else m_resultWindowWasShown->setValue(true);
 
+            valueTag = tag.getTag("plot-window-was-shown");
+
+            if ( ok ) m_plotWindowWasShown->setValue(valueTag.getValue());
+            else m_plotWindowWasShown->setValue(true);
+
             const QStringList pathList = ((DString)m_lastProjectNode->getValue().toString()).parseBetween2("{", "}");
 
             m_projectPathList.clear();
@@ -96,6 +101,7 @@ bool PALSProjectSettingsManager::load()
             m_lastPathNode->setValue("/home");
             m_lastBackgroundChannelRangeNode->setValue(1000);
             m_resultWindowWasShown->setValue(true);
+            m_plotWindowWasShown->setValue(true);
             m_projectPathList.clear();
 
             return false;
@@ -108,6 +114,7 @@ bool PALSProjectSettingsManager::load()
         m_lastPathNode->setValue("/home");
         m_lastBackgroundChannelRangeNode->setValue(1000);
         m_resultWindowWasShown->setValue(true);
+        m_plotWindowWasShown->setValue(true);
         m_projectPathList.clear();
 
         return false;
@@ -175,6 +182,11 @@ void PALSProjectSettingsManager::setResultWindowWasShownOnExit(bool on)
     m_resultWindowWasShown->setValue(on);
 }
 
+void PALSProjectSettingsManager::setPlotWindowWasShownOnExit(bool on)
+{
+    m_plotWindowWasShown->setValue(on);
+}
+
 QStringList PALSProjectSettingsManager::getLastProjectPathList() const
 {
     return m_projectPathList;
@@ -205,6 +217,11 @@ bool PALSProjectSettingsManager::getResultWindowWasShownOnExit() const
     return m_resultWindowWasShown->getValue().toBool();
 }
 
+bool PALSProjectSettingsManager::getPlotWindowWasShownOnExit() const
+{
+    return m_plotWindowWasShown->getValue().toBool();
+}
+
 PALSProjectSettingsManager::PALSProjectSettingsManager()
 {
     m_rootNode = new DSimpleXMLNode("project-settings");
@@ -214,14 +231,16 @@ PALSProjectSettingsManager::PALSProjectSettingsManager()
     m_lastBackgroundChannelRangeNode = new DSimpleXMLNode("last-background-channel-range");
     m_backgroundCalculationWithLastChannels = new DSimpleXMLNode("background-calculation-using-first-channels");
     m_resultWindowWasShown = new DSimpleXMLNode("result-window-was-shown");
+    m_plotWindowWasShown = new DSimpleXMLNode("plot-window-was-shown");
 
-    (*m_rootNode) << m_lastProjectNode << m_linLogOnExitNode << m_lastPathNode << m_lastBackgroundChannelRangeNode << m_backgroundCalculationWithLastChannels << m_resultWindowWasShown;
+    (*m_rootNode) << m_lastProjectNode << m_linLogOnExitNode << m_lastPathNode << m_lastBackgroundChannelRangeNode << m_backgroundCalculationWithLastChannels << m_resultWindowWasShown << m_plotWindowWasShown;
 }
 
 PALSProjectSettingsManager::~PALSProjectSettingsManager()
 {
     save();
 
+    DDELETE_SAFETY(m_plotWindowWasShown);
     DDELETE_SAFETY(m_resultWindowWasShown);
     DDELETE_SAFETY(m_lastProjectNode);
     DDELETE_SAFETY(m_linLogOnExitNode);

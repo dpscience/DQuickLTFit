@@ -50,6 +50,9 @@ public:
     void setFileName(const QString fileName);
     QString getFileName() const;
 
+    void setASCIIDataName(const QString& file);
+    QString getASCIIDataName() const;
+
     void setChannelRanges(int min, int max);
 
     int getMinChannel() const;

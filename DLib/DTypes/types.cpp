@@ -112,6 +112,7 @@ QImage DSVGImage::getImage(const QString &document, double width, double height,
     QPainter painter(&result);
 
     painter.setRenderHint(QPainter::Antialiasing, antialiasing);
+    painter.setRenderHint(QPainter::HighQualityAntialiasing, antialiasing);
     renderer.render(&painter);
 
 

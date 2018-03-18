@@ -43,17 +43,17 @@ double weightedResidual(double y, double yi, double erryi, int weightingCode)
         residual = weight*(yi - y);
         break;
 
-    case 1: //ysquare weighting:
-        weight = yi*yi;
+    case 1: //y-variance weighting:
+        weight = 1.0/yi;
 
         residual = weight*(yi - y);
         break;
 
-    case 2: //yerror weighting:
+    case 2: //y-error weighting:
         if (qFuzzyCompare(yi, 0.0) || yi < 0)
             weight = 1;
         else
-            weight = yi/sqrt(yi);
+            weight = 1.0/sqrt(yi);
 
         residual = weight*(yi - y);
         break;
@@ -136,32 +136,26 @@ int lifeTimeDecaySum(int dataCnt, int paramCnt, double *fitParamArray, double *d
 }
 
 
-LifeTimeDecayFitEngine::LifeTimeDecayFitEngine() {}
+LifeTimeDecayFitEngine::LifeTimeDecayFitEngine() :
+    m_dataStructure(nullptr) {}
 
-void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
+void LifeTimeDecayFitEngine::init(PALSDataStructure *dataStructure)
 {
-    if ( !status )
-    {
-        return;
-    }
+    m_dataStructure = dataStructure;
+}
+
+void LifeTimeDecayFitEngine::fit()
+{
+    PALSDataStructure *dataStructure = m_dataStructure;
 
     if ( !dataStructure )
-    {
-        *status = -60;
         return;
-    }
 
     if ( !dataStructure->getDataSetPtr() || !dataStructure->getFitSetPtr() )
-    {
-        *status = -61;
         return;
-    }
 
     if ( dataStructure->getDataSetPtr()->getLifeTimeData().isEmpty() )
-    {
-        *status = -62;
         return;
-    }
 
     //initialize the data-set:
     const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1;
@@ -234,7 +228,7 @@ void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
 
      v.countOfDeviceResolutionParams = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();
 
-     v.weighting = (dataStructure->getFitSetPtr()->usingYVariance()?residualWeighting::yerror_Weighting:residualWeighting::no_Weighting);
+     v.weighting = (dataStructure->getFitSetPtr()->usingYVariance()?residualWeighting::yvariance_Weighting:residualWeighting::no_Weighting);
 
     //Parameter constraints:
     mp_par *paramContraints = new mp_par[paramCnt];
@@ -727,7 +721,7 @@ void LifeTimeDecayFitEngine::fit(PALSDataStructure *dataStructure, int *status)
                               (void*) &v,
                               &result);
 
-    *status = stat;
+    DUNUSED_PARAM(stat);
 
     updateDataStructureFromResult(dataStructure, &result, &v, params);
 
@@ -934,6 +928,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString endHtml = "</font>";
 
     const QString projectName("<nobr><b>Project:</b></nobr>");
+    const QString asciiFileName("<nobr><b>Raw-Data:</b></nobr>");
 
     const QString fitFinishCode("<nobr><b>Finish-Code:</b></nobr>");
 
@@ -955,6 +950,9 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
         iterationsVal = QString("<nobr><b>" % alertHtml % QVariant((int)fitSet->getNeededIterations()).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % endHtml % "</b></nobr>");
     else
         iterationsVal = QString("<nobr><b>" % QVariant((int)fitSet->getNeededIterations()).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % "</b></nobr>");
+
+    const QString binFac("<nobr>Bin-Factor:</nobr>");
+    const QString binFacVal("<nobr><b>" % QVariant(dataStructure->getDataSetPtr()->getBinFactor()).toString() % " </b></nobr>");
 
     const QString channelRange("<nobr>ROI:</nobr>");
     const QString channelRangeVal("<nobr><b>" % QVariant(fitSet->getStartChannel()).toString() % ":" % QVariant(fitSet->getStopChannel()).toString() % "</b> [" % QVariant(PALSProjectManager::sharedInstance()->getMinChannel()).toString()  % ":" % QVariant(PALSProjectManager::sharedInstance()->getMaxChannel()).toString() % "]</nobr>");
@@ -991,7 +989,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     resultString = resultString % tableStart;
 
-    /*project-name:*/   resultString = resultString % startRow % startContent % projectName % finishContent % startContent % PALSProjectManager::sharedInstance()->getFileName() % finishContent % finishRow % lineBreak;
+    /*project-name:*/   resultString = resultString % startRow % startContent % projectName % finishContent % startContent % PALSProjectManager::sharedInstance()->getFileName() % finishContent % finishRow;
+    /*ascii-file-name:*/   resultString = resultString % startRow % startContent % asciiFileName % finishContent % startContent % ((PALSProjectManager::sharedInstance()->getASCIIDataName()==QString("unknown"))?QString("unknown source"):PALSProjectManager::sharedInstance()->getASCIIDataName()) % finishContent % finishRow % lineBreak;
 
     /*finish code and time/date:*/resultString = resultString % startRow % startContent % fitFinishCode % finishContent % startContent % fitFinishCodeVal % finishContent % finishRow % lineBreak;
 
@@ -1001,7 +1000,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
 
     /*Channel-Range:*/resultString = resultString % startRow % startContent % channelRange % finishContent % startContent % channelRangeVal % finishContent % finishRow;
-    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % channelResolution % finishContent % startContent % channelResolutionVal % finishContent % finishRow % lineBreak;
+    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % channelResolution % finishContent % startContent % channelResolutionVal % finishContent % finishRow;
+    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % binFac % finishContent % startContent % binFacVal % finishContent % finishRow % lineBreak;
 
     /*Background-Counts:*/resultString = resultString % startRow % startContent % backgroundCounts % finishContent % startContent % backgroundCountsVal % finishContent % finishRow;
     /*Counts in Range:*/resultString = resultString % startRow % startContent % countsInRange % finishContent % startContent % countsInRangeVal % finishContent % finishRow;
@@ -1152,8 +1152,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     resultString = resultString % lineBreak % lineBreak;
 
 
-    /*Device Resolution-Components:*/
-    resultString = resultString % "<nobr><b><big>" % "Device-Resolution-Components [" % "2/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big></nobr>";
+    /*IRF-Components:*/
+    resultString = resultString % "<nobr><b><big>" % "IRF-Components [" % "2/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big></nobr>";
 
     resultString = resultString % tableBorderStart;
 

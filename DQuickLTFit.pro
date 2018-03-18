@@ -50,7 +50,7 @@ HEADERS  += \
                     ltparameterlistview.h \
                     ltfitplotresidualview.h \
                     ltcalculatordlg.h \
-                    ltdefines.h \
+                    ltdefines.h
 
 FORMS    += \
                    ltfitdlg.ui \

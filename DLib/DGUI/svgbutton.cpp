@@ -32,9 +32,12 @@ DSVGButton::DSVGButton(QWidget *parent) :
     QWidget(parent),
     m_enabled(true),
     m_state(undefined),
-    m_bgColor("transparent")
+    m_bgColor("transparent"),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
-    setStyleSheet("QWidget{background-color: " + m_bgColor + "}");
+    setStyleSheet("QWidget{background-color: " + m_bgColor + "}");    
+    manageLayout();
 }
 
 DSVGButton::DSVGButton(const QString &pathLiteral, QWidget *parent) :
@@ -44,9 +47,12 @@ DSVGButton::DSVGButton(const QString &pathLiteral, QWidget *parent) :
     m_clickedSVGPath(pathLiteral % "_click.svg"),
     m_enabled(true),
     m_state(undefined),
-    m_bgColor("transparent")
+    m_bgColor("transparent"),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
-    setStyleSheet("QWidget{background-color: " + m_bgColor + "}");
+    setStyleSheet("QWidget{background-color: " + m_bgColor + "}");    
+    manageLayout();
 }
 
 DSVGButton::DSVGButton(const QString &defaultStateSVGPath, const QString &hoverStateSVGPath, const QString &clickStateSVGPath, QWidget *parent) :
@@ -56,12 +62,19 @@ DSVGButton::DSVGButton(const QString &defaultStateSVGPath, const QString &hoverS
     m_clickedSVGPath(clickStateSVGPath),
     m_enabled(true),
     m_state(undefined),
-    m_bgColor("transparent")
+    m_bgColor("transparent"),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
     setStyleSheet("QWidget{background-color: " % m_bgColor % "}");
+    manageLayout();
 }
 
-DSVGButton::~DSVGButton() {}
+DSVGButton::~DSVGButton()
+{
+    DDELETE_SAFETY(m_svgWidget);
+    DDELETE_SAFETY(m_layout);
+}
 
 QString DSVGButton::customStatusTip() const
 {
@@ -70,32 +83,21 @@ QString DSVGButton::customStatusTip() const
 
 void DSVGButton::paintEvent(QPaintEvent *event)
 {
-    QPainter painter(this);
-    painter.setRenderHints(QPainter::Antialiasing|QPainter::HighQualityAntialiasing);
-
-    QImage img;
-
-    if ( m_state == hover || m_state == release || !m_enabled )
-        img = DSVGImage::getImage(m_hoverSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-    else if ( m_state == click && m_enabled )
-        img = DSVGImage::getImage(m_clickedSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-    else if ( (m_state == leave || m_state == undefined) && m_enabled )
-        img = DSVGImage::getImage(m_defSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-
-    if ( !img.isNull() )
-        painter.drawImage(DSVGButton_SVG_OFFSET, DSVGButton_SVG_OFFSET, img);
-
     QWidget::paintEvent(event);
 }
 
-void DSVGButton::resizeEvent(QResizeEvent *event){ QWidget::resizeEvent(event); }
+void DSVGButton::resizeEvent(QResizeEvent *event)
+{
+    m_svgWidget->setGeometry(2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, width()-2*DSVGButton_SVG_OFFSET, height()-2*DSVGButton_SVG_OFFSET);
+    QWidget::resizeEvent(event);
+}
 
 bool DSVGButton::event(QEvent *event)
 {
     if ( event->type() == QEvent::Enter )
     {
         m_state = hover;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
@@ -103,14 +105,14 @@ bool DSVGButton::event(QEvent *event)
     else if ( event->type() == QEvent::Leave )
     {
         m_state = leave;
-        update();
+        updateSVGImage();
 
         emit statusChanged("");
     }
     else if ( event->type() == QEvent::MouseButtonPress )
     {
         m_state = click;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
@@ -118,15 +120,26 @@ bool DSVGButton::event(QEvent *event)
     else if ( event->type() == QEvent::MouseButtonRelease )
     {
         m_state = release;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
 
-        emit clicked();
+        if (m_enabled)
+            emit clicked();
     }
 
     return QWidget::event(event);
+}
+
+void DSVGButton::updateSVGImage()
+{
+    if ( m_state == hover || m_state == release || !m_enabled )
+        m_svgWidget->load(m_hoverSVGPath);
+    else if ( m_state == click && m_enabled )
+        m_svgWidget->load(m_clickedSVGPath);
+    else if ( (m_state == leave || m_state == undefined) && m_enabled )
+        m_svgWidget->load(m_defSVGPath);
 }
 
 void DSVGButton::mousePressEvent(QMouseEvent *event)
@@ -149,58 +162,84 @@ void DSVGButton::setLiteralSVG(const QString &pathLiteral)
     m_defSVGPath     = pathLiteral % "_default.svg";
     m_hoverSVGPath   = pathLiteral % "_hover.svg";
     m_clickedSVGPath = pathLiteral % "_click.svg";
+
+    updateSVGImage();
 }
 
 void DSVGButton::setDefaultStateSVG(const QString &path)
 {
     m_defSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGButton::setHoverStateSVG(const QString &path)
 {
     m_hoverSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGButton::setClickedStateSVG(const QString &path)
 {
     m_clickedSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGButton::setBackgroundColor(const QString &cssName)
 {
     m_bgColor = cssName;
     setStyleSheet("QWidget{background-color: " + m_bgColor + "}");
+
+    updateSVGImage();
 }
 
 void DSVGButton::setBackgroundColor(const QColor &color)
 {
     m_bgColor = QString("rgb(" % QVariant(color.red()).toString() % ", " + QVariant(color.green()).toString() % ", " % QVariant(color.blue()).toString() % ")");
     setStyleSheet("QWidget{background-color: " % m_bgColor % "}");
+
+    updateSVGImage();
 }
 
 void DSVGButton::setCustomStatusTip(const QString& statusTip)
 {
     m_statusTip = statusTip;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGButton::enableWidget(bool enabled)
 {
     m_enabled = enabled;
     QWidget::setEnabled(enabled);
-    update();
+
+    updateSVGImage();
+}
+
+void DSVGButton::manageLayout()
+{
+    m_svgWidget = new QSvgWidget;
+    m_layout = new QHBoxLayout(this);
+
+    m_layout->addWidget(m_svgWidget);
+    m_layout->setAlignment(Qt::AlignCenter);
+    m_layout->setContentsMargins(2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET);
+
+    setLayout(m_layout);
 }
 
 
 DSVGToolButton::DSVGToolButton(QWidget *parent) :
     QToolButton(parent),
     m_enabled(true),
-    m_state(undefined)
+    m_state(undefined),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
     setStyleSheet("QWidget{background-color: transparent}");
+    manageLayout();
 }
 
 DSVGToolButton::DSVGToolButton(const QString &pathLiteral, QWidget *parent) :
@@ -209,9 +248,12 @@ DSVGToolButton::DSVGToolButton(const QString &pathLiteral, QWidget *parent) :
     m_hoverSVGPath(pathLiteral % "_hover.svg"),
     m_clickedSVGPath(pathLiteral % "_click.svg"),
     m_enabled(true),
-    m_state(undefined)
+    m_state(undefined),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
     setStyleSheet("QWidget{background-color: transparent}");
+    manageLayout();
 }
 
 DSVGToolButton::DSVGToolButton(const QString &defaultStateSVGPath, const QString &hoverStateSVGPath, const QString &clickStateSVGPath, QWidget *parent) :
@@ -220,36 +262,44 @@ DSVGToolButton::DSVGToolButton(const QString &defaultStateSVGPath, const QString
     m_hoverSVGPath(hoverStateSVGPath),
     m_clickedSVGPath(clickStateSVGPath),
     m_enabled(true),
-    m_state(undefined)
+    m_state(undefined),
+    m_svgWidget(nullptr),
+    m_layout(nullptr)
 {
     setStyleSheet("QWidget{background-color: transparent}");
+    manageLayout();
 }
 
-DSVGToolButton::~DSVGToolButton() {}
+DSVGToolButton::~DSVGToolButton()
+{
+    DDELETE_SAFETY(m_svgWidget);
+    DDELETE_SAFETY(m_layout);
+}
 
 QString DSVGToolButton::customStatusTip() const
 {
     return m_statusTip;
 }
 
+void DSVGToolButton::updateSVGImage()
+{
+    if ( m_state == hover || m_state == release || !m_enabled )
+        m_svgWidget->load(m_hoverSVGPath);
+    else if ( m_state == click && m_enabled )
+        m_svgWidget->load(m_clickedSVGPath);
+    else if ( (m_state == leave || m_state == undefined) && m_enabled )
+        m_svgWidget->load(m_defSVGPath);
+}
+
 void DSVGToolButton::paintEvent(QPaintEvent *event)
 {
-    QPainter painter(this);
-    painter.setRenderHints(QPainter::Antialiasing|QPainter::HighQualityAntialiasing);
-
-    QImage img;
-
-    if ( m_state == hover || m_state == release || !m_enabled )
-        img = DSVGImage::getImage(m_hoverSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-    else if ( m_state == click && m_enabled )
-        img = DSVGImage::getImage(m_clickedSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-    else if ( (m_state == leave || m_state == undefined) && m_enabled )
-        img = DSVGImage::getImage(m_defSVGPath, geometry().height()-2*DSVGButton_SVG_OFFSET, geometry().height()-2*DSVGButton_SVG_OFFSET);
-
-    if ( !img.isNull() )
-        painter.drawImage(DSVGButton_SVG_OFFSET, DSVGButton_SVG_OFFSET, img);
-
     QToolButton::paintEvent(event);
+}
+
+void DSVGToolButton::resizeEvent(QResizeEvent *event)
+{
+    m_svgWidget->setGeometry(2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, width()-2*DSVGButton_SVG_OFFSET, height()-2*DSVGButton_SVG_OFFSET);
+    QToolButton::resizeEvent(event);
 }
 
 bool DSVGToolButton::event(QEvent *event)
@@ -257,7 +307,7 @@ bool DSVGToolButton::event(QEvent *event)
     if ( event->type() == QEvent::Enter )
     {
         m_state = hover;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
@@ -265,14 +315,14 @@ bool DSVGToolButton::event(QEvent *event)
     else if ( event->type() == QEvent::Leave )
     {
         m_state = leave;
-        update();
+        updateSVGImage();
 
         emit statusChanged("");
     }
     else if ( event->type() == QEvent::MouseButtonPress )
     {
         m_state = click;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
@@ -280,12 +330,13 @@ bool DSVGToolButton::event(QEvent *event)
     else if ( event->type() == QEvent::MouseButtonRelease )
     {
         m_state = release;
-        update();
+        updateSVGImage();
 
         if ( !m_statusTip.isEmpty() )
             emit statusChanged(m_statusTip);
 
-        emit clicked();
+        if (m_enabled)
+            emit clicked();
     }
 
     return QToolButton::event(event);
@@ -309,30 +360,47 @@ void DSVGToolButton::mouseMoveEvent(QMouseEvent *event)
 void DSVGToolButton::setDefaultStateSVG(const QString &path)
 {
     m_defSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGToolButton::setHoverStateSVG(const QString &path)
 {
     m_hoverSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGToolButton::setClickedStateSVG(const QString &path)
 {
     m_clickedSVGPath = path;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGToolButton::setCustomStatusTip(const QString& statusTip)
 {
     m_statusTip = statusTip;
-    update();
+
+    updateSVGImage();
 }
 
 void DSVGToolButton::enableWidget(bool enabled)
 {
     m_enabled = enabled;
     QToolButton::setEnabled(enabled);
-    update();
+
+    updateSVGImage();
+}
+
+void DSVGToolButton::manageLayout()
+{
+    m_svgWidget = new QSvgWidget;
+    m_layout = new QHBoxLayout(this);
+
+    m_layout->addWidget(m_svgWidget);
+    m_layout->setAlignment(Qt::AlignCenter);
+    m_layout->setContentsMargins(2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET, 2*DSVGButton_SVG_OFFSET);
+
+    setLayout(m_layout);
 }

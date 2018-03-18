@@ -33,6 +33,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QLabel>
+#include <QSpinBox>
 #include <QAction>
 #include <QDebug>
 
@@ -95,6 +96,8 @@ public slots:
 
     void calculateBackground();
 
+    void enableGUI(bool enable);
+
 private slots:
     void fitHasFinished();
     void updateWindowTitle();
@@ -119,6 +122,7 @@ private:
     DFastCalculatorDlg *m_calculatorWindow;
 
     LifeTimeDecayFitEngine *m_fitEngine;
+    QThread *m_fitEngineThread;
 
     QLabel *m_chiSquareLabel;
     QLabel *m_integralCountInROI;

@@ -47,8 +47,8 @@ DSynchronizedDblPlotWindow::DSynchronizedDblPlotWindow(QWidget *parent) :
 
     ui->yAxisRangeButton->setToolTip("Change the Vertical Axis Scaling");
     ui->xAxisRangeButton->setToolTip("Change the Horizontal Axis Scaling");
-    ui->linLogButton->setToolTip("Switch between linear/logarithmic scaling");
-    ui->saveAsPNGButton->setToolTip("Export Plot Window as PNG");
+    ui->linLogButton->setToolTip("Switch between Linear & Logarithmic Scaling");
+    ui->saveAsPNGButton->setToolTip("Export Plot Window as Image");
     ui->saveFitAndResidualData->setToolTip("Export Residuals, Fit- and Raw-Data");
 
     //plot-views:
@@ -73,7 +73,7 @@ DSynchronizedDblPlotWindow::DSynchronizedDblPlotWindow(QWidget *parent) :
 
     ui->plotWidget_1->yLeft()->setAxisLabelText("[#]");
     ui->plotWidget_2->xBottom()->setAxisLabelText("Channel [#]");
-    ui->plotWidget_2->yLeft()->setAxisLabelText("Sigma");
+    ui->plotWidget_2->yLeft()->setAxisLabelText("Conv. Level");
     ui->plotWidget_1->xBottom()->setAxisLabelText("");
 
     ui->plotWidget_1->xBottom()->setAxisLabelPosition(plot2DXAxis::middle);
@@ -230,6 +230,9 @@ void DSynchronizedDblPlotWindow::setButtonsVisible(bool visible)
     ui->yAxisRangeButton->setVisible(visible);
     ui->xAxisRangeButton->setVisible(visible);
     ui->saveAsPNGButton->setVisible(visible);
+    ui->saveImageButton->setVisible(visible);
+    ui->line->setVisible(visible);
+    ui->saveFitAndResidualData->setVisible(visible);
 }
 
 void DSynchronizedDblPlotWindow::autoscale()

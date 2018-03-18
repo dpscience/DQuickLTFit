@@ -50,7 +50,7 @@ class DFastResultDlg : public QWidget
 {
     Q_OBJECT
 public:
-    explicit DFastResultDlg(QWidget *parent = 0);
+    explicit DFastResultDlg(QWidget *parent = nullptr);
     virtual ~DFastResultDlg();
 
 protected:
@@ -59,8 +59,10 @@ protected:
     virtual void showEvent(QShowEvent *event);
 
 public slots:
-    void addResultTabFromLastFit(); //call this to add a new PALSFitResult automatically from the last results (directly after the fit)!
-    void addResultTabsFromHistory(); //call this to add all results from the historie (on loading a project)!
+    /* call this to add a new PALSFitResult automatically from the last results (directly after fitting) */
+    void addResultTabFromLastFit();
+    /* call this to add all results from the history (e.g. on loading a project) */
+    void addResultTabsFromHistory();
     void clearTabs();
     void clearTabsFromButtonClick();
 
@@ -89,7 +91,7 @@ class ResultTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ResultTab(QWidget *parent = 0);
+    explicit ResultTab(QWidget *parent = nullptr);
     virtual ~ResultTab();
 
     QTextEdit *textEdit() const;

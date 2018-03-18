@@ -46,8 +46,7 @@
 
 typedef enum {
     no_Weighting = 0,
-    //yvariance_Weighting
-    ysquare_Weighting = 1,
+    yvariance_Weighting = 1,
     yerror_Weighting = 2
 } residualWeighting;
 
@@ -84,7 +83,8 @@ public:
     LifeTimeDecayFitEngine();
 
 public slots:
-    void fit(PALSDataStructure *dataStructure, int *status);
+    void init(PALSDataStructure *dataStructure);
+    void fit();
 
 public:
     QList<QPointF> getFitPlotPoints() const;
@@ -98,15 +98,14 @@ signals:
 
 private:
     QList<QPointF> m_fitPlotSet;
+    PALSDataStructure *m_dataStructure;
 };
 
 class PALSFitErrorCodeStringBuilder
 {
 public:
-    inline static QString errorString(int errorCode)
-    {
-        switch ( errorCode )
-        {
+    inline static QString errorString(int errorCode) {
+        switch ( errorCode ) {
         case 0:
             return QString("General Input Parameter Error.");
             break;

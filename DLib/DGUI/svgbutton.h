@@ -40,9 +40,9 @@ class DSVGButton : public QWidget
 {
     Q_OBJECT
 public:
-    explicit DSVGButton(QWidget *parent = 0);
-    explicit DSVGButton(const QString& pathLiteral, QWidget *parent = 0);
-    explicit DSVGButton(const QString& defaultStateSVGPath, const QString& hoverStateSVGPath, const QString& clickStateSVGPath, QWidget *parent = 0);
+    explicit DSVGButton(QWidget *parent = nullptr);
+    explicit DSVGButton(const QString& pathLiteral, QWidget *parent = nullptr);
+    explicit DSVGButton(const QString& defaultStateSVGPath, const QString& hoverStateSVGPath, const QString& clickStateSVGPath, QWidget *parent = nullptr);
     virtual ~DSVGButton();
 
     QString customStatusTip() const;
@@ -59,6 +59,8 @@ protected:
     virtual void paintEvent(QPaintEvent *event);
     virtual void resizeEvent(QResizeEvent *event);
     virtual bool event(QEvent *event);
+
+    virtual void updateSVGImage();
 
     virtual void mousePressEvent(QMouseEvent* event);
     virtual void mouseReleaseEvent(QMouseEvent* event);
@@ -80,6 +82,12 @@ public slots:
     void enableWidget(bool);
 
 private:
+    void manageLayout();
+
+private:
+    QSvgWidget *m_svgWidget;
+    QHBoxLayout *m_layout;
+
     QString m_bgColor;
     state m_state;
     QString m_statusTip;
@@ -94,9 +102,9 @@ class DSVGToolButton : public QToolButton
 {
     Q_OBJECT
 public:
-    explicit DSVGToolButton(QWidget *parent = 0);
-    explicit DSVGToolButton(const QString& pathLiteral, QWidget *parent = 0);
-    explicit DSVGToolButton(const QString& defaultStateSVGPath, const QString& hoverStateSVGPath, const QString& clickStateSVGPath, QWidget *parent = 0);
+    explicit DSVGToolButton(QWidget *parent = nullptr);
+    explicit DSVGToolButton(const QString& pathLiteral, QWidget *parent = nullptr);
+    explicit DSVGToolButton(const QString& defaultStateSVGPath, const QString& hoverStateSVGPath, const QString& clickStateSVGPath, QWidget *parent = nullptr);
     virtual ~DSVGToolButton();
 
     QString customStatusTip() const;
@@ -111,7 +119,10 @@ protected:
     }state;
 
     virtual void paintEvent(QPaintEvent *event);
+    virtual void resizeEvent(QResizeEvent *event);
     virtual bool event(QEvent *event);
+
+    virtual void updateSVGImage();
 
     virtual void mousePressEvent(QMouseEvent* event);
     virtual void mouseReleaseEvent(QMouseEvent* event);
@@ -130,6 +141,12 @@ public slots:
     void enableWidget(bool);
 
 private:
+    void manageLayout();
+
+private:
+    QSvgWidget *m_svgWidget;
+    QHBoxLayout *m_layout;
+
     state m_state;
     QString m_statusTip;
     QString m_defSVGPath;
