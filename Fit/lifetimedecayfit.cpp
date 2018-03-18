@@ -951,6 +951,9 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     else
         iterationsVal = QString("<nobr><b>" % QVariant((int)fitSet->getNeededIterations()).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % "</b></nobr>");
 
+    const QString binFac("<nobr>Bin-Factor:</nobr>");
+    const QString binFacVal("<nobr><b>" % QVariant(dataStructure->getDataSetPtr()->getBinFactor()).toString() % " </b></nobr>");
+
     const QString channelRange("<nobr>ROI:</nobr>");
     const QString channelRangeVal("<nobr><b>" % QVariant(fitSet->getStartChannel()).toString() % ":" % QVariant(fitSet->getStopChannel()).toString() % "</b> [" % QVariant(PALSProjectManager::sharedInstance()->getMinChannel()).toString()  % ":" % QVariant(PALSProjectManager::sharedInstance()->getMaxChannel()).toString() % "]</nobr>");
 
@@ -997,7 +1000,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
 
     /*Channel-Range:*/resultString = resultString % startRow % startContent % channelRange % finishContent % startContent % channelRangeVal % finishContent % finishRow;
-    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % channelResolution % finishContent % startContent % channelResolutionVal % finishContent % finishRow % lineBreak;
+    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % channelResolution % finishContent % startContent % channelResolutionVal % finishContent % finishRow;
+    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % binFac % finishContent % startContent % binFacVal % finishContent % finishRow % lineBreak;
 
     /*Background-Counts:*/resultString = resultString % startRow % startContent % backgroundCounts % finishContent % startContent % backgroundCountsVal % finishContent % finishRow;
     /*Counts in Range:*/resultString = resultString % startRow % startContent % countsInRange % finishContent % startContent % countsInRangeVal % finishContent % finishRow;

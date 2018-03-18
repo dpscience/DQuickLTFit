@@ -104,10 +104,8 @@ private:
 class PALSFitErrorCodeStringBuilder
 {
 public:
-    inline static QString errorString(int errorCode)
-    {
-        switch ( errorCode )
-        {
+    inline static QString errorString(int errorCode) {
+        switch ( errorCode ) {
         case 0:
             return QString("General Input Parameter Error.");
             break;

@@ -574,11 +574,49 @@ QStringList DFastLTFitDlg::autoDetectDelimiter(const QString& row)
 void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameFromSeq)
 {
     QString fileName = "";
+    int binFac = 1;
 
     if ( type == AccessType::FromOneFile ) {
-        fileName = QFileDialog::getOpenFileName(this, tr("Import data from ASCII File..."),
+        QFileDialog *fd = new QFileDialog;
+        fd->setWindowTitle(tr("Import data from ASCII File..."));
+        fd->setAcceptMode(QFileDialog::AcceptOpen);
+        fd->setDirectory(PALSProjectSettingsManager::sharedInstance()->getLastChosenPath());
+        fd->setFileMode(QFileDialog::ExistingFile);
+        fd->setViewMode(QFileDialog::Detail);
+        fd->setNameFilter(tr("Lifetime Data (*.dat *.txt *.log)"));
+
+        fd->setOption(QFileDialog::DontUseNativeDialog, true);
+
+        QGridLayout *layout = static_cast<QGridLayout*>(fd->layout());
+
+        QHBoxLayout *hboxLayout = new QHBoxLayout;
+
+        QLabel *label = new QLabel("Bin-Factor?");
+        QSpinBox *binFacBox = new QSpinBox;
+        binFacBox->setRange(1, 100);
+        binFacBox->setSingleStep(1);
+        binFacBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+        hboxLayout->addWidget(label);
+        hboxLayout->addWidget(binFacBox);
+
+        layout->addLayout(hboxLayout, layout->rowCount()-1, layout->columnCount());
+
+        if ( !fd->exec() )
+            return;
+
+        fileName = !fd->selectedFiles().isEmpty()?fd->selectedFiles().first():QString("");
+        binFac = binFacBox->value();
+
+        DDELETE_SAFETY(label);
+        DDELETE_SAFETY(binFacBox);
+        DDELETE_SAFETY(hboxLayout);
+        DDELETE_SAFETY(fd);
+
+        /*fileName = QFileDialog::getOpenFileName(widget, tr("Import data from ASCII File..."),
                                                 PALSProjectSettingsManager::sharedInstance()->getLastChosenPath(),
-                                                tr("Lifetime Data (*.dat *.txt *.log)"));
+                                                tr("Lifetime Data (*.dat *.txt *.log)"));*/
+
 
         if ( fileName.isEmpty() )
             return;
@@ -592,8 +630,7 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
 
     QFile file(fileName);
 
-    if ( file.open(QIODevice::ReadOnly) )
-    {
+    if ( file.open(QIODevice::ReadOnly) ) {
         QList<QPointF> dataSet;
         int minChn = INT_MAX;
         int  maxChn = -INT_MAX;
@@ -601,9 +638,10 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
         int maxCnts = -INT_MAX;
 
         int channelCounter = 0;
+        int channel = 0;
+        int counts = 0;
 
-        while ( !file.atEnd() )
-        {
+        while ( !file.atEnd() ) {
             QString dataRow = file.readLine();
 
             const QStringList dataSetString = autoDetectDelimiter(dataRow);
@@ -614,18 +652,17 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
 
             bool ok_1 = true, ok_2 = false;
 
-            int channel = channelCounter;
             channelCounter ++;
 
-            if ( dataSetString.size() == 2 )
-                channel = (int)QVariant(dataSetString.at(0)).toInt(&ok_1);
+            if ( dataSetString.size() == 2 ) {
+                int tchannel = (int)QVariant(dataSetString.at(0)).toInt(&ok_1);
+                DUNUSED_PARAM(tchannel);
+            }
 
-            int counts = 0;
-
             if ( dataSetString.size() == 2 )
-                counts = (int)QVariant(dataSetString.at(1)).toInt(&ok_2);
+                counts += (int)QVariant(dataSetString.at(1)).toInt(&ok_2);
             else if ( dataSetString.size() == 1 )
-                counts = (int)QVariant(dataSetString.at(0)).toInt(&ok_2);
+                counts += (int)QVariant(dataSetString.at(0)).toInt(&ok_2);
 
             if ( !ok_1 || !ok_2 )
                 continue;
@@ -635,10 +672,8 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
             maxCnts = qMax(counts, maxCnts);
             minCnts = qMin(counts, minCnts);
 
-            if ( channel < 0 || counts < 0 )
-            {
-                if ( type == AccessType::FromOneFile )
-                {
+            if ( counts < 0 ) {
+                if ( type == AccessType::FromOneFile ) {
                     DMSGBOX("Please correct the content of this file. Values lower than 0 detected.")
                 }
 
@@ -646,10 +681,19 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
                 return;
             }
 
-            dataSet.append(QPointF(channel, counts));
+            if ( !(channelCounter%binFac) ) {
+                dataSet.append(QPointF(channel, counts));
+                counts = 0;
+                channel ++;
+            }
         }
 
         file.close();
+
+        if ( dataSet.size() <= 2 ) {
+            DMSGBOX("Either the Number of Data-Points was too low or the Bin-Factor is too high!");
+            return;
+        }
 
 
         PALSProjectManager::sharedInstance()->setChannelRanges(minChn, maxChn);
@@ -658,7 +702,7 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
         PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->clearResidualData();
 
         PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->setLifeTimeData(dataSet);
-
+        PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->setBinFactor(binFac);
 
         m_plotWindow->clearAll();
 

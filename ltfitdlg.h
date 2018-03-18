@@ -33,6 +33,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QLabel>
+#include <QSpinBox>
 #include <QAction>
 #include <QDebug>
 
