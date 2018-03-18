@@ -7,7 +7,12 @@ Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de)<br><br>
 
 # How to cite this Software?
 
-[![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
+You can cite all versions by using the DOI 10.5281/zenodo.1168285. This DOI represents all versions, and will always resolve to the latest one.<br>
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345.svg)](https://doi.org/10.5281/zenodo.1202345)
+
+DQuickLTFit v2.06: [![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
+DQuickLTFit v3.0:  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345.svg)](https://doi.org/10.5281/zenodo.1202345)<br>
 
 # About
 <b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and implements the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
