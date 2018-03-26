@@ -796,7 +796,7 @@ void DFastLTFitDlg::runFit()
                 conflictText.append(", ");
         }
 
-        conflictText.append("<br><br><b>DEVICE:</b> ");
+        conflictText.append("<br><br><b>IRF:</b> ");
 
         for ( int i = 0 ; i <  deviceConflictList.size() ; ++ i)
         {
@@ -940,6 +940,7 @@ void DFastLTFitDlg::instantPreview()
 
      int inRangeCnt = 0;
      int integralCounts = 0;
+     int tZero = 0;
 
      for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() )
      {
@@ -962,6 +963,7 @@ void DFastLTFitDlg::instantPreview()
                  countsInPeak = p.y();
                  peakChannel = p.x();
                  peakChannelIndex = channelCnt;
+                 tZero = peakChannel;
              }
 
              inRangeCnt ++;
@@ -970,6 +972,7 @@ void DFastLTFitDlg::instantPreview()
          channelCnt ++;
      }
 
+     tZero -= startChannel;
 
     ///Parameter initial conditions:
     double *params = new double[paramCnt]; //source->sample->gaussian->bkgrd
@@ -1087,7 +1090,7 @@ void DFastLTFitDlg::instantPreview()
     }
     else
     {
-        m_integralCountInROI->setText("Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
+        m_integralCountInROI->setText("t<sub>0</sub>: <b>" % QVariant(tZero*channelResolution).toString() % "ps</b> Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
         m_chiSquareLabel->setText("&#967;<sup>2</sup> ( @ start ): <b>" % QString::number(residuum, 'g', 3) % "</b>"); //chi-square
     }
 

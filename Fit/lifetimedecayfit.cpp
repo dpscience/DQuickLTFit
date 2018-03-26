@@ -943,6 +943,10 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString chiSquare("<nobr><b>&#935;<sup>2</sup>:</b></nobr>");
     const QString chiSquareVal("<nobr><b>" % QString::number(fitSet->getChiSquareAfterFit(), 'g', 4) % "</b> (" % QString::number(fitSet->getChiSquareOnStart(), 'g', 4) % " @ start)" % "</nobr>");
 
+    const QString fitWeighting("<nobr><b>Fit-Weighting:</b></nobr>");
+    const QString fitWeightingVal("<nobr><b>" % QString((!fitSet->getUsingYVariance()?QString("no weighting"):QString("variance"))) % "</b></nobr>");
+
+
     const QString iterations("<nobr><b>Iterations:</b></nobr>");
     QString iterationsVal = "";
 
@@ -961,7 +965,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString channelResolutionVal("<nobr><b>" % QVariant(fitSet->getChannelResolution()).toString() % " </b>ps</nobr>");
 
     const QString backgroundCounts("<nobr>Background:</nobr>");
-    const QString backgroundCountsVal("<nobr><b>" % QVariant(fitSet->getBackgroundParamPtr()->getParameter()->getStartValue()).toString() % "</b></nobr>");
+    const QString backgroundCountsVal("<nobr><b>" % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getStartValue(), 'f', 4) % "</b></nobr>");
 
     const QString countsInRange("<nobr>Integral Counts in ROI:</nobr>");
     const QString countsInRangeVal("<nobr><b>" % QVariant(fitSet->getCountsInRange()).toString() % "</b></nobr>");
@@ -995,6 +999,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     /*finish code and time/date:*/resultString = resultString % startRow % startContent % fitFinishCode % finishContent % startContent % fitFinishCodeVal % finishContent % finishRow % lineBreak;
 
     /*chi-square:*/resultString = resultString % startRow % startContent % chiSquare % finishContent % startContent % chiSquareVal % finishContent % finishRow % lineBreak;
+    /*fit-weighting:*/resultString = resultString % startRow % startContent % fitWeighting % finishContent % startContent % fitWeightingVal % finishContent % finishRow % lineBreak;
 
     /*iterations:*/resultString = resultString % startRow % startContent % iterations % finishContent % startContent % iterationsVal % finishContent % finishRow % lineBreak;
 
