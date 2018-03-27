@@ -125,8 +125,8 @@ void plot2DXAxis::setAxisRange(double axisMin, double axisMax)
 
     m_axisSpan = (m_axisMaxValue - m_axisMinValue);
 
-    if ( axisMax <= m_axisSpan )
-        m_lastDisplayedValue = m_axisMaxValue;
+    /*if ( axisMax <= m_axisSpan )
+        m_lastDisplayedValue = m_axisMaxValue;*/
 
     updateAxis();
 

@@ -111,9 +111,6 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     connect(ui->actionOpen_Calculator, SIGNAL(triggered(bool)), this, SLOT(changeCalculatorWindowVisibility(bool)));
     connect(m_calculatorWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(changeCalculatorWindowVisibilityFromOutside(bool)));
 
-    connect(ui->actionExport_As_Batch_Template, SIGNAL(triggered()), this, SLOT(exportAsBatchTemplate()));
-    connect(ui->actionLoad_Sequence, SIGNAL(triggered()), this, SLOT(loadSequence()));
-
     connect(ui->actionRaw_Data_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeRawDataTraceVisibility(bool)));
     connect(ui->actionStart_Value_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeStartValueTraceVisibility(bool)));
     connect(ui->actionFit_Trace_2, SIGNAL(triggered(bool)), this, SLOT(changeFitTraceVisibility(bool)));
@@ -343,7 +340,7 @@ void DFastLTFitDlg::openProjectFromPath(const QString& fileName)
             ui->widget->setFitRangeLimits(minChn, maxChn);
             ui->widget->setFitRange(minChn, maxChn);
 
-            m_plotWindow->setYRangeData(1, maxCnts);
+            m_plotWindow->setYRangeData(1, 1.3*((double)maxCnts));
         }
         else
         {
@@ -367,8 +364,8 @@ void DFastLTFitDlg::openProjectFromPath(const QString& fileName)
             m_resultWindow->addResultTabsFromHistory();
     }
 
-    updateWindowTitle();
     updateLastProjectActionList();
+    updateWindowTitle();    
 }
 
 void DFastLTFitDlg::saveProject()
@@ -721,7 +718,7 @@ void DFastLTFitDlg::importASCII(const AccessType& type, const QString& fileNameF
         ui->widget->setFitRangeLimits(minChn, maxChn);
         ui->widget->setFitRange(newStartChannel, newStopChannel);
 
-        m_plotWindow->setYRangeData(1, maxCnts);
+        m_plotWindow->setYRangeData(1, 1.3*((double)maxCnts));
 
         instantPreview();
     }
@@ -742,7 +739,7 @@ void DFastLTFitDlg::runFit()
 {
     if ( PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getLifeTimeData().isEmpty() )
     {
-        DMSGBOX("<nobr>No data to be fitted: Please import any data before.</nobr>");
+        DMSGBOX("<nobr>No data for fitting: Please import lifetime data before.</nobr>");
         return;
     }
 
@@ -857,17 +854,29 @@ void DFastLTFitDlg::updateLastProjectActionList()
 {
     if ( m_lastProjectsMenu )
     {
-        while ( m_lastProjectActionList.size() > 0 )
-        {
-            m_lastProjectsMenu->removeAction(m_lastProjectActionList.first());
+        const int size = m_lastProjectActionList.size();
+        int cnt = 0;
 
-            QAction *action = m_lastProjectActionList.takeFirst();
+        if ( size != 0 ) {
+            while ( cnt < size )
+            {
+                m_lastProjectsMenu->removeAction(m_lastProjectActionList.first());
 
-            disconnect(action, SIGNAL(triggered()), this, SLOT(openProjectFromLastPath()));
-            DDELETE_SAFETY(action);
+                QAction *action = m_lastProjectActionList.takeFirst();
+
+                if (action) {
+                    disconnect(action, SIGNAL(triggered()), this, SLOT(openProjectFromLastPath()));
+                    DDELETE_SAFETY(action);
+                }
+
+                cnt ++;
+            }
         }
 
+        ui->menuLoad_file->removeAction(m_lastProjectsMenu->menuAction());
+
         DDELETE_SAFETY(m_lastProjectsMenu);
+        m_lastProjectActionList.clear();
 
         m_lastProjectsMenu = new QMenu(ui->menuLoad_file);
         m_lastProjectsMenu->setTitle("Recent Projects...");
@@ -882,7 +891,6 @@ void DFastLTFitDlg::updateLastProjectActionList()
         }
 
         m_lastProjectsMenu->addActions(m_lastProjectActionList);
-
         ui->menuLoad_file->addAction(m_lastProjectsMenu->menuAction());
     }
 }
@@ -1031,7 +1039,7 @@ void DFastLTFitDlg::instantPreview()
     const double bkgrdVal = params[bkgrdIndex];
 
 
-    QList<QPointF> m_fitPlotSet;
+    QList<QPointF> fitPlotSet;
 
     double residuum = 0;
     for ( int i = 0 ; i < dataCntInRange-1 ; ++ i )
@@ -1067,7 +1075,7 @@ void DFastLTFitDlg::instantPreview()
         if ( !qFuzzyCompare(y[i], 0.0) )
             residuum += (f-y[i])*(f-y[i])/y[i];
 
-        m_fitPlotSet.append(QPointF(x[i], f));
+        fitPlotSet.append(QPointF(x[i], f));
     }
 
     if ( dataCntInRange == 0 )
@@ -1078,7 +1086,7 @@ void DFastLTFitDlg::instantPreview()
     PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->setChiSquareOnStart(residuum);
 
     m_plotWindow->clearPreviewData();
-    m_plotWindow->addPreviewData(m_fitPlotSet);
+    m_plotWindow->addPreviewData(fitPlotSet);
     m_plotWindow->updateBkgrdData();
 
     m_plotWindow->setFitRange(startChannel, stopChannel);
@@ -1090,7 +1098,7 @@ void DFastLTFitDlg::instantPreview()
     }
     else
     {
-        m_integralCountInROI->setText("t<sub>0</sub>: <b>" % QVariant(tZero*channelResolution).toString() % "ps</b> Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
+        m_integralCountInROI->setText("estimated t<sub>0</sub>: <b>" % QVariant(tZero*channelResolution).toString() % "ps</b> Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
         m_chiSquareLabel->setText("&#967;<sup>2</sup> ( @ start ): <b>" % QString::number(residuum, 'g', 3) % "</b>"); //chi-square
     }
 

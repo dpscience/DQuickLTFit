@@ -207,6 +207,9 @@ class PALSFitSet
     DSimpleXMLNode *m_dataPlotImageNode;
     DSimpleXMLNode *m_residualPlotImageNode;
 
+    DSimpleXMLNode *m_spectralCentroidNode;
+    DSimpleXMLNode *m_t0spectralCentroidNode;
+
 
     PALSSourceParameter *m_sourceParams;
     PALSDeviceResolutionParameter *m_deviceResolutionParams;
@@ -251,6 +254,8 @@ SETTINGS_WRITE
     void setSumOfIntensities(double sum);
     void setDataPlotImage(const QImage& image);
     void setResidualPlotImage(const QImage& image);
+    void setSpectralCentroid(double center);
+    void setTZeroSpectralCentroid(double center);
 
 SETTINGS_READ
     unsigned int getMaximumIterations() const;
@@ -272,6 +277,8 @@ SETTINGS_READ
     double getSumOfIntensities() const;
     QImage getDataPlotImage() const;
     QImage getResidualPlotImage() const;
+    double getSpectralCentroid() const;
+    double getT0SpectralCentroid() const;
 };
 
 class PALSResultHistorie

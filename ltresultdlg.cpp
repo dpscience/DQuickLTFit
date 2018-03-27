@@ -137,7 +137,7 @@ void DFastResultDlg::addResultTabsFromHistory()
         emit resultListHasResults();
 }
 
-void DFastResultDlg::clearTabs()
+void DFastResultDlg::clearTabs(bool fromButtonClick)
 {
     while ( ui->tabWidget->count() > 0 )
     {
@@ -146,7 +146,8 @@ void DFastResultDlg::clearTabs()
         ResultTab *resultTab = m_tabList.takeAt(0);
         DDELETE_SAFETY(resultTab);
 
-        PALSProjectManager::sharedInstance()->getResultHistorie()->removeResult(0);
+        if (fromButtonClick)
+            PALSProjectManager::sharedInstance()->getResultHistorie()->removeResult(0);
     }
 
     m_tabList.clear();
@@ -171,7 +172,7 @@ void DFastResultDlg::clearTabsFromButtonClick()
         return;
 
 
-    clearTabs();
+    clearTabs(true);
 }
 
 #include <QDesktopWidget>

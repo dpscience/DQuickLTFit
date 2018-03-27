@@ -188,6 +188,8 @@ void DSynchronizedDblPlotWindow::changeYAxisScaling()
         m_dVRangeDblSlider->setLimits(0.0, m_dVRangeDblSlider->upperLimit());
         ui->plotWidget_1->yLeft()->setAxisScaling(plot2DXAxis::linear);
     }
+
+    ui->plotWidget_1->updatePlotView();
 }
 
 void DSynchronizedDblPlotWindow::setYLimits(double lower, double upper)

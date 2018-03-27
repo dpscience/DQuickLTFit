@@ -843,6 +843,10 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
     QList<QPointF> residuals;
 
     const double bkgrdVal = params[bkgrdIndex];
+    double intergralCountsWithoutBkgrd = ((double)v->integralCountsInROI)-(v->stopChannel-v->startChannel)*bkgrdVal;
+    double tZeroChannel = 0;
+    int tZeroIndex = 0;
+    double maxf = -1;
 
     for ( int i = 0 ; i < v->dataCnt-1 ; ++ i )
     {
@@ -870,8 +874,14 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
 
         x += v->startChannel;
 
-        f *=  ((double)v->integralCountsInROI)-(v->stopChannel-v->startChannel)*bkgrdVal;
+        f *=  intergralCountsWithoutBkgrd;
         f += bkgrdVal;
+
+        if (f > maxf) {
+            maxf = f;
+            tZeroChannel = x;
+            tZeroIndex = i;
+        }
 
         if ( !qFuzzyCompare(v->y[i], 0.0) )
             chiSquare += (f-v->y[i])*(f-v->y[i])/v->y[i];
@@ -882,9 +892,25 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
         residuals.append(QPointF(x, res));
     }
 
+    //center of mass (spectral centroid):
+    double tCenter = 0;
+    double sumOfCounts = 0;
+    for ( int i = tZeroIndex ; i < m_fitPlotSet.size()-1 ; ++ i ) {
+        const double time = ((m_fitPlotSet.at(i).x()-tZeroChannel) + 0.5)*channelResolution;
+        const double counts = 0.5*(m_fitPlotSet.at(i).y()+m_fitPlotSet.at(i+1).y());
+
+        tCenter += time*counts;
+        sumOfCounts += counts;
+    }
+
+    tCenter /= sumOfCounts;
+
     chiSquare /= (double)v->dataCnt;
 
     dataStructure->getFitSetPtr()->setChiSquareAfterFit(chiSquare);
+
+    dataStructure->getFitSetPtr()->setTZeroSpectralCentroid((tZeroChannel-v->startChannel)*channelResolution);
+    dataStructure->getFitSetPtr()->setSpectralCentroid(tCenter);
 
     dataStructure->getDataSetPtr()->setResiduals(residuals);
     dataStructure->getDataSetPtr()->setFitData(m_fitPlotSet);
@@ -973,6 +999,10 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString peakToBackgroundRatio("<nobr>Peak-to-Background Ratio:</nobr>");
     const QString peakToBackgroundRatioVal("<nobr><b>" % QString::number(fitSet->getPeakToBackgroundRation(), 'f', 3) % "</b></nobr>");
 
+    const QString centerOfMass("<nobr>Center of Mass:</nobr>");
+    const QString centerOfMassVal("<nobr><b>" %  QString::number(fitSet->getSpectralCentroid(), 'f', 4) % " </b>ps (estimated t<sub>0</sub>: <b>" % QString::number(fitSet->getT0SpectralCentroid(), 'f', 4) % "</b> ps) - ROI: [" % QVariant(fitSet->getStartChannel()).toString() % ":" % QVariant(fitSet->getStopChannel()).toString() % "]</nobr>");
+
+
     const QString fitParamCount("<nobr>Fit-Parameter Count:</nobr>");
     const QString fitParamCountVal("<nobr><b>" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "</b></nobr>");
 
@@ -1011,6 +1041,8 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     /*Background-Counts:*/resultString = resultString % startRow % startContent % backgroundCounts % finishContent % startContent % backgroundCountsVal % finishContent % finishRow;
     /*Counts in Range:*/resultString = resultString % startRow % startContent % countsInRange % finishContent % startContent % countsInRangeVal % finishContent % finishRow;
     /*Peak-to-Background Ratio:*/resultString = resultString % startRow % startContent % peakToBackgroundRatio % finishContent % startContent % peakToBackgroundRatioVal % finishContent % finishRow % lineBreak;
+
+    /*Center-of-Mass:*/resultString = resultString % startRow % startContent % centerOfMass % finishContent % startContent % centerOfMassVal % finishContent % finishRow % lineBreak;
 
     /*Fit-Parameter-Count:*/resultString = resultString % startRow % startContent % fitParamCount % finishContent % startContent % fitParamCountVal % finishContent % finishRow % lineBreak;
 
