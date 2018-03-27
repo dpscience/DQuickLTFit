@@ -265,8 +265,10 @@ void DSimpleXMLNode::addChild(DSimpleXMLNode *childNode)
         m_childs.append(childNode);
         childNode->setParent(this);
     }
-
-    DERRORLOG("DSimpleXMLNode: !Child-Pointer is nullptr.");
+    else
+    {
+        DERRORLOG("DSimpleXMLNode: !Child-Pointer is nullptr.");
+    }
 }
 
 QList<DSimpleXMLNode*> DSimpleXMLNode::getChilds() const

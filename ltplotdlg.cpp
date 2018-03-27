@@ -74,6 +74,7 @@ DFastPlotDlg::DFastPlotDlg(QWidget *parent) :
     connect(ui->widget->imageExportButton(), SIGNAL(clicked()), this, SLOT(savePlotAsImage()));
     connect(ui->widget->exportDataButton(), SIGNAL(clicked()), this, SLOT(exportResidualsFitAndRawData()));
     connect(ui->widget->dataPlotView_1()->yLeft(), SIGNAL(scalingPropertyChanged()), this, SLOT(updateROI()));
+    connect(ui->widget->dataPlotView_1()->xBottom(), SIGNAL(scalingPropertyChanged()), this, SLOT(updateROI()));
 }
 
 DFastPlotDlg::~DFastPlotDlg()
@@ -144,24 +145,19 @@ void DFastPlotDlg::setFitRange(int lower, int upper)
     ui->widget->dataPlotView_1()->curve().at(4)->clearCurveContent();
 
     double yAxisMin = 0;
-    if ( ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue() < 1 )
+    if ( ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue() < 1 || qFuzzyCompare(ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue(), 1.0) )
         yAxisMin = 1;
     else
         yAxisMin = ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue();
 
-    const QPointF pLower1(lower, yAxisMin);
-    const QPointF pLower2(lower, ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue());
+    const int range = ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue() - yAxisMin;
+    const int dataPointCount = 20000;
+    const double increment = (double)range/(double)dataPointCount;
 
-    const QPointF pUpper1(upper, yAxisMin);
-    const QPointF pUpper2(upper, ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue());
-
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower1.x(), pLower1.y());
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower2.x(), pLower2.y());
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower1.x(), pLower1.y());
-
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper1.x(), pUpper1.y());
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper2.x(), pUpper2.y());
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper1.x(), pUpper1.y());
+    for ( int i = 0 ; i < dataPointCount ; ++ i ) {
+        ui->widget->dataPlotView_1()->curve().at(3)->addData(lower, i*increment + yAxisMin);
+        ui->widget->dataPlotView_1()->curve().at(4)->addData(upper, i*increment + yAxisMin);
+    }
 
     ui->widget->dataPlotView_1()->replot();
 }
@@ -170,11 +166,10 @@ void DFastPlotDlg::updateBkgrdData()
 {
     ui->widget->dataPlotView_1()->curve().at(5)->clearCurveContent();
 
-    const QPointF pLeft(ui->widget->dataPlotView_1()->xBottom()->getAxisMinValue(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->getStartValue());
-    const QPointF pRight(ui->widget->dataPlotView_1()->xBottom()->getAxisMaxValue(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->getStartValue());
+    const int channelRange = PALSProjectManager::sharedInstance()->getMaxChannel() - PALSProjectManager::sharedInstance()->getMinChannel();
 
-    ui->widget->dataPlotView_1()->curve().at(5)->addData(pLeft.x(), pLeft.y());
-    ui->widget->dataPlotView_1()->curve().at(5)->addData(pRight.x(), pRight.y());
+    for (int i = 0 ; i < channelRange ; ++ i )
+        ui->widget->dataPlotView_1()->curve().at(5)->addData(PALSProjectManager::sharedInstance()->getMinChannel() + i, PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->getStartValue());
 
     ui->widget->dataPlotView_1()->replot();
 }
@@ -211,14 +206,18 @@ void DFastPlotDlg::setFitDataVisible(bool visible)
 
 void DFastPlotDlg::setLinearScaling()
 {
-    if ( !ui->widget->isLinearScalingEnabled() )
+    if ( !ui->widget->isLinearScalingEnabled() ) {
         ui->widget->changeYAxisScaling();
+        updateROI();
+    }
 }
 
 void DFastPlotDlg::setLogarithmicScaling()
 {
-    if ( ui->widget->isLinearScalingEnabled() )
+    if ( ui->widget->isLinearScalingEnabled() ) {
         ui->widget->changeYAxisScaling();
+        updateROI();
+    }
 }
 
 void DFastPlotDlg::savePlotAsImage()
@@ -359,24 +358,19 @@ void DFastPlotDlg::updateROI()
     ui->widget->dataPlotView_1()->curve().at(4)->clearCurveContent();
 
     double yAxisMin = 0;
-    if ( ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue() < 1 )
+    if ( ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue() < 1 || qFuzzyCompare(ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue(), 1.0) )
         yAxisMin = 1;
     else
         yAxisMin = ui->widget->dataPlotView_1()->yLeft()->getAxisMinValue();
 
-    const QPointF pLower1(lower, yAxisMin);
-    const QPointF pLower2(lower, ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue());
+    const int range = ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue() - yAxisMin;
+    const int dataPointCount = 20000;
+    const double increment = (double)range/(double)dataPointCount;
 
-    const QPointF pUpper1(upper, yAxisMin);
-    const QPointF pUpper2(upper, ui->widget->dataPlotView_1()->yLeft()->getAxisMaxValue());
-
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower1.x(), pLower1.y());
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower2.x(), pLower2.y());
-    ui->widget->dataPlotView_1()->curve().at(3)->addData(pLower1.x(), pLower1.y());
-
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper1.x(), pUpper1.y());
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper2.x(), pUpper2.y());
-    ui->widget->dataPlotView_1()->curve().at(4)->addData(pUpper1.x(), pUpper1.y());
+    for ( int i = 0 ; i < dataPointCount ; ++ i ) {
+        ui->widget->dataPlotView_1()->curve().at(3)->addData(lower, i*increment + yAxisMin);
+        ui->widget->dataPlotView_1()->curve().at(4)->addData(upper, i*increment + yAxisMin);
+    }
 
     ui->widget->dataPlotView_1()->replot();
 }

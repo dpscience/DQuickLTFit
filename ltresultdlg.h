@@ -63,7 +63,7 @@ public slots:
     void addResultTabFromLastFit();
     /* call this to add all results from the history (e.g. on loading a project) */
     void addResultTabsFromHistory();
-    void clearTabs();
+    void clearTabs(bool fromButtonClick = false);
     void clearTabsFromButtonClick();
 
     void printToPDF();

@@ -384,6 +384,16 @@ void PALSFitSet::setResidualPlotImage(const QImage &image)
         m_residualPlotImageNode->setValue("");
 }
 
+void PALSFitSet::setSpectralCentroid(double center)
+{
+    m_spectralCentroidNode->setValue(center);
+}
+
+void PALSFitSet::setTZeroSpectralCentroid(double center)
+{
+    m_t0spectralCentroidNode->setValue(center);
+}
+
 double PALSFitSet::getChannelResolution() const
 {
    return m_channelResolutionNode->getValue().toDouble();
@@ -453,6 +463,26 @@ QImage PALSFitSet::getResidualPlotImage() const
     return QImage::fromData(img, "PNG");
 }
 
+double PALSFitSet::getSpectralCentroid() const
+{
+    bool ok = false;
+    double center =  m_spectralCentroidNode->getValue().toDouble(&ok);
+    if (!ok)
+        center = 0;
+
+    return center;
+}
+
+double PALSFitSet::getT0SpectralCentroid() const
+{
+    bool ok = false;
+    double center =  m_t0spectralCentroidNode->getValue().toDouble(&ok);
+    if (!ok)
+        center = 0;
+
+    return center;
+}
+
 PALSDataSet *PALSDataStructure::getDataSetPtr() const
 {
     return m_dataSet;
@@ -513,6 +543,7 @@ PALSDataSet::PALSDataSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
 
     safeTag = tag.getTag("data").getTag("bin-factor", &ok);
     if ( ok ) m_xyDataBinFac->setValue(safeTag.getValue());
+    else m_xyDataBinFac->setValue(1);
 
     safeTag = tag.getTag("data").getTag("lt-fit-data", &ok);
     if ( ok ) m_fitDataNode->setValue(safeTag.getValue());
@@ -749,6 +780,8 @@ PALSFitSet::PALSFitSet(PALSDataStructure *parent)
     m_sumOfIntensitiesNode = new DSimpleXMLNode("sum-of-intensities");
     m_dataPlotImageNode = new DSimpleXMLNode("data-plot-raw-image");
     m_residualPlotImageNode = new DSimpleXMLNode("residual-plot-raw-image");
+    m_spectralCentroidNode = new DSimpleXMLNode("spectral-centroid");
+    m_t0spectralCentroidNode = new DSimpleXMLNode("t0-spectral-centroid");
 
     m_sourceParams = new PALSSourceParameter(this);
     m_deviceResolutionParams = new PALSDeviceResolutionParameter(this);
@@ -774,9 +807,11 @@ PALSFitSet::PALSFitSet(PALSDataStructure *parent)
     m_sumOfIntensitiesNode->setValue(0.0f);
     m_dataPlotImageNode->setValue("");
     m_residualPlotImageNode->setValue("");
+    m_spectralCentroidNode->setValue(0.0f);
+    m_t0spectralCentroidNode->setValue(0.0f);
 
 
-    *m_parentNode << m_maxIterationsNode  << m_neededIterationsNode << m_usingYVarianceNode << m_chiSquareOnStart << m_chiSquareAfterFit << m_channelResolutionNode << m_startChannelNode << m_stopChannelNode << m_averageLifeTimeNode << m_averageLifeTimeErrorNode << m_countsInRangeNode << m_dateTimeOfLastFitResultsNode << m_fitFinishCodeNode << m_fitFinishCodeValueNode << m_peakToBackgroundRatioNode << m_sumOfIntensitiesNode << m_dataPlotImageNode << m_residualPlotImageNode;
+    *m_parentNode << m_maxIterationsNode  << m_neededIterationsNode << m_usingYVarianceNode << m_t0spectralCentroidNode << m_spectralCentroidNode << m_chiSquareOnStart << m_chiSquareAfterFit << m_channelResolutionNode << m_startChannelNode << m_stopChannelNode << m_averageLifeTimeNode << m_averageLifeTimeErrorNode << m_countsInRangeNode << m_dateTimeOfLastFitResultsNode << m_fitFinishCodeNode << m_fitFinishCodeValueNode << m_peakToBackgroundRatioNode << m_sumOfIntensitiesNode << m_dataPlotImageNode << m_residualPlotImageNode;
     *(parent->getParent()) << m_parentNode;
 }
 
@@ -802,6 +837,8 @@ PALSFitSet::PALSFitSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
     m_sumOfIntensitiesNode = new DSimpleXMLNode("sum-of-intensities");
     m_dataPlotImageNode = new DSimpleXMLNode("data-plot-raw-image");
     m_residualPlotImageNode = new DSimpleXMLNode("residual-plot-raw-image");
+    m_spectralCentroidNode = new DSimpleXMLNode("spectral-centroid");
+    m_t0spectralCentroidNode = new DSimpleXMLNode("t0-spectral-centroid");
 
     m_sourceParams = new PALSSourceParameter(this, tag.getTag("fit"));
     m_deviceResolutionParams = new PALSDeviceResolutionParameter(this, tag.getTag("fit"));
@@ -825,6 +862,16 @@ PALSFitSet::PALSFitSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
 
     if ( ok ) m_usingYVarianceNode->setValue(safeTag.getValue());
     else      m_usingYVarianceNode->setValue(false);
+
+    safeTag = tag.getTag("fit").getTag("spectral-centroid", &ok);
+
+    if ( ok ) m_spectralCentroidNode->setValue(safeTag.getValue());
+    else      m_spectralCentroidNode->setValue(0.0f);
+
+    safeTag = tag.getTag("fit").getTag("t0-spectral-centroid", &ok);
+
+    if ( ok ) m_t0spectralCentroidNode->setValue(safeTag.getValue());
+    else      m_t0spectralCentroidNode->setValue(0.0f);
 
     safeTag = tag.getTag("fit").getTag("chi-square-start", &ok);
 
@@ -902,7 +949,7 @@ PALSFitSet::PALSFitSet(PALSDataStructure *parent, const DSimpleXMLTag &tag)
     else       m_residualPlotImageNode->setValue("");
 
 
-    *m_parentNode << m_maxIterationsNode << m_neededIterationsNode << m_usingYVarianceNode << m_chiSquareOnStart << m_chiSquareAfterFit << m_channelResolutionNode << m_startChannelNode << m_stopChannelNode << m_averageLifeTimeNode << m_averageLifeTimeErrorNode << m_countsInRangeNode << m_dateTimeOfLastFitResultsNode << m_fitFinishCodeNode << m_fitFinishCodeValueNode << m_peakToBackgroundRatioNode << m_sumOfIntensitiesNode << m_dataPlotImageNode << m_residualPlotImageNode;
+    *m_parentNode << m_maxIterationsNode << m_neededIterationsNode << m_usingYVarianceNode << m_t0spectralCentroidNode << m_spectralCentroidNode << m_chiSquareOnStart << m_chiSquareAfterFit << m_channelResolutionNode << m_startChannelNode << m_stopChannelNode << m_averageLifeTimeNode << m_averageLifeTimeErrorNode << m_countsInRangeNode << m_dateTimeOfLastFitResultsNode << m_fitFinishCodeNode << m_fitFinishCodeValueNode << m_peakToBackgroundRatioNode << m_sumOfIntensitiesNode << m_dataPlotImageNode << m_residualPlotImageNode;
     *(parent->getParent()) << m_parentNode;
 }
 
@@ -916,6 +963,8 @@ PALSFitSet::~PALSFitSet()
     DDELETE_SAFETY(m_maxIterationsNode);
     DDELETE_SAFETY(m_neededIterationsNode);
     DDELETE_SAFETY(m_usingYVarianceNode);
+    DDELETE_SAFETY(m_t0spectralCentroidNode);
+    DDELETE_SAFETY(m_spectralCentroidNode);
     DDELETE_SAFETY(m_chiSquareOnStart);
     DDELETE_SAFETY(m_chiSquareAfterFit);
     DDELETE_SAFETY(m_channelResolutionNode);

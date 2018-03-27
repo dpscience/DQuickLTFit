@@ -244,7 +244,7 @@ void plot2DXWidget::replot()
                 const QPoint lastValue( xBottom()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().x(),xBottom()->getAxisScaling()),
                                         yLeft()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().y(),yLeft()->getAxisScaling()) );
 
-                cachePixelList.insert(0,lastValue);
+                //cachePixelList.insert(0,lastValue);
             }
                 break;
 
@@ -254,7 +254,7 @@ void plot2DXWidget::replot()
                 const QPoint lastValue( xTop()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().x(),xTop()->getAxisScaling()),
                                         yLeft()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().y(),yLeft()->getAxisScaling()) );
 
-                cachePixelList.insert(0,lastValue);
+                //cachePixelList.insert(0,lastValue);
             }
                 break;
 
@@ -264,7 +264,7 @@ void plot2DXWidget::replot()
                 const QPoint lastValue( xTop()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().x(),xTop()->getAxisScaling()),
                                         yRight()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().y(),yRight()->getAxisScaling()) );
 
-                cachePixelList.insert(0,lastValue);
+                //cachePixelList.insert(0,lastValue);
             }
                 break;
 
@@ -274,7 +274,7 @@ void plot2DXWidget::replot()
                 const QPoint lastValue( xBottom()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().x(),xBottom()->getAxisScaling()),
                                         yRight()->ConvertToPixel(curve().at(index)->getLastValueBeforeReplot().y(),yRight()->getAxisScaling()) );
 
-                cachePixelList.insert(0,lastValue);
+                //cachePixelList.insert(0,lastValue);
             }
                 break;
 

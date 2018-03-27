@@ -218,16 +218,11 @@ void plot2DXCanvas::drawRect(const QPoint &pixel,
 void plot2DXCanvas::drawLine(const QList<QPoint> &pixelList,
                                   QPainter *painter)
 {
-    QPainterPath path;
+    QVector<QLineF> lineVec;
+    for ( int i = 0 ; i < pixelList.size() - 1 ; i ++ )
+        lineVec.append(QLineF(QPointF(pixelList.at(i)), QPointF(pixelList.at(i+1))));
 
-    for ( int i = 0 ; i < pixelList.size() - 1 ; i ++ ){
-        if ( i == 0 )
-            path.moveTo(pixelList.at(i));
-
-        path.lineTo(pixelList.at(i+1));
-    }
-
-    painter->drawPath(path);
+    painter->drawLines(lineVec);
 }
 
 void plot2DXCanvas::drawCircle(const QPoint &pixel,
