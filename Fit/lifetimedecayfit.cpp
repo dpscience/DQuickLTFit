@@ -44,13 +44,16 @@ double weightedResidual(double y, double yi, double erryi, int weightingCode)
         break;
 
     case 1: //y-variance weighting:
-        weight = 1.0/yi;
+        if (qFuzzyCompare(yi, 0.0) || yi < 0 || (int)yi <= 0)
+            weight = 1;
+        else
+            weight = 1.0/yi;
 
         residual = weight*(yi - y);
         break;
 
     case 2: //y-error weighting:
-        if (qFuzzyCompare(yi, 0.0) || yi < 0)
+        if (qFuzzyCompare(yi, 0.0) || yi < 0 || (int)yi <= 0)
             weight = 1;
         else
             weight = 1.0/sqrt(yi);
