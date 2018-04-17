@@ -7,7 +7,7 @@ Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rig
 
 # How to cite this Software?
 
-You can cite all versions by using the DOI 10.5281/zenodo.1168285. This DOI represents all versions, and will always resolve to the latest one.<br>
+You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168285.svg)](https://doi.org/10.5281/zenodo.1168285)
 
