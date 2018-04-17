@@ -11,10 +11,13 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This D
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168285.svg)](https://doi.org/10.5281/zenodo.1168285)
 
-DQuickLTFit v2.06:<br>[![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
+## v3.x
+DQuickLTFit v3.02:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1219482.svg)](https://doi.org/10.5281/zenodo.1219482)<br>
+DQuickLTFit v3.01:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1208613.svg)](https://doi.org/10.5281/zenodo.1208613)<br>
 DQuickLTFit v3.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345.svg)](https://doi.org/10.5281/zenodo.1202345)<br>
-DQuickLTFit v3.01:<br>[![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
-DQuickLTFit v3.02:<br>[![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
+
+## v2.x
+DQuickLTFit v2.06:<br>[![DOI](https://zenodo.org/badge/120471586.svg)](https://zenodo.org/badge/latestdoi/120471586)<br>
 
 # About
 <b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and implements the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
