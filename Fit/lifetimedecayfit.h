@@ -38,7 +38,9 @@
 #include "mpfit.h"
 
 //#define __FITPARAM_DEBUG
-#define __FITQUEUE_DEBUG
+//#define __FITQUEUE_DEBUG
+
+#define __MAX_NUMBER_OF_FIT_RUNS 20
 
 //additional error-enums for the mpfit.h
 #define MP_ERR_NULLPTR_DATASTRUCTURE (-60) /*PALSDataStructure = nullptr;*/
@@ -75,9 +77,9 @@ typedef struct {
 
   int mpfitRuns;
 
-  int niter[20];
-  double chiSquareStart[20];
-  double chiSquareFinal[20];
+  int niter[__MAX_NUMBER_OF_FIT_RUNS];
+  double chiSquareStart[__MAX_NUMBER_OF_FIT_RUNS];
+  double chiSquareFinal[__MAX_NUMBER_OF_FIT_RUNS];
 
 } values;
 

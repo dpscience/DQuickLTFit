@@ -775,7 +775,7 @@ void LifeTimeDecayFitEngine::fit()
 #endif
 
         /* maximum exceeded ? */
-        if ( fitRun == 20 ) {
+        if ( fitRun == __MAX_NUMBER_OF_FIT_RUNS ) {
 #ifdef __FITQUEUE_DEBUG
             qDebug() << "LIMIT EXCEEDED";
 #endif
@@ -1053,7 +1053,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString fitWeightingVal("<nobr><b>" % QString("sqrt[counts]") % "</b></nobr>");
 
     const QString fitRuns("<nobr><b>Fit-Runs:</b></nobr>");
-    QString fitRunsVal = QString("<nobr><b>" % info2Html % QVariant(v->mpfitRuns).toString() % "/" % QVariant(20).toString() % endHtml % "</b></nobr>");
+    QString fitRunsVal = QString("<nobr><b>" % info2Html % QVariant(v->mpfitRuns).toString() % "/" % QVariant(__MAX_NUMBER_OF_FIT_RUNS).toString() % endHtml % "</b></nobr>");
 
     const QString binFac("<nobr>Bin-Factor:</nobr>");
     const QString binFacVal("<nobr><b>" % QVariant(dataStructure->getDataSetPtr()->getBinFactor()).toString() % " </b></nobr>");
