@@ -28,67 +28,21 @@
 
 #include "lifetimedecayfit.h"
 
-double weightedResidual(double y, double yi, double erryi, int weightingCode)
-{
-    DUNUSED_PARAM(erryi);
-
-    double residual = 0.0f;
-    double weight = 0.0f;
-
-    switch ( weightingCode )
-    {
-    case 0: //no weighting:
-        weight = 1;
-
-        residual = weight*(yi - y);
-        break;
-
-    case 1: //y-variance weighting:
-        if (qFuzzyCompare(yi, 0.0) || yi < 0 || (int)yi <= 0)
-            weight = 1;
-        else
-            weight = 1.0/yi;
-
-        residual = weight*(yi - y);
-        break;
-
-    case 2: //y-error weighting:
-        if (qFuzzyCompare(yi, 0.0) || yi < 0 || (int)yi <= 0)
-            weight = 1;
-        else
-            weight = 1.0/sqrt(yi);
-
-        residual = weight*(yi - y);
-        break;
-
-    default:
-        residual = 0;
-        break;
-    }
-
-    return residual;
-}
-
 /*
  * fit function declarations:
  *---------------------------
  *
  * dataCnt - number of data points
- * ltParam - number of lifetime-components -> means <tau> and <I>
- * ltFitParamArray - array of lifetime-fit parameters (tau and I)
- * gaussianSigma - sigma-value of gaussian distribution
- * gaussianMu - t0 of gaussian distribution
- * bgrd - background
+ * ltParam - number of lifetime components (tau and I) and IRF parameters (incl. background)
+ * ltFitParamArray - array of lifetime (tau and I) and IRF parameter (incl. background)
  *
- * dy - array of residuals to be returned
- * vars - private data (struct values *)
- *        which contains the x/y-values and the y-uncertainties
+ * dy - array of (weighted) residuals to be returned
+ * vars - private data (struct values *) containing the x/y-values and the y-uncertainties (Poisson nois/statistical error)
  *
- * returns: 0 for success and 1 for failed!
+ * returns 1 for success (and 0 for failed <= it never fails)
  */
 
-int lifeTimeDecaySum(int dataCnt, int paramCnt, double *fitParamArray, double *dy, double **dvec, void *vars)
-{
+int multiExpDecay(int dataCnt, int paramCnt, double *fitParamArray, double *dy, double **dvec, void *vars) {
         DUNUSED_PARAM(dvec);
 
         values *v = (values*) vars;
@@ -100,44 +54,65 @@ int lifeTimeDecaySum(int dataCnt, int paramCnt, double *fitParamArray, double *d
         const int cntGaussian = v->countOfDeviceResolutionParams;
         const double bkgrd = fitParamArray[paramCnt-1];
 
+        const double roi = (v->stopChannel - v->startChannel + 1);
+        const double bkgrdArea = roi*bkgrd;
+        const double area = (double)v->integralCountsInROI;
+        const double areaWithoutBkgrd = (area - bkgrdArea);
 
-        for ( int i = 0 ; i < dataCnt-1 ; ++ i )
-        {
-            double f = 0;
+        const int reducedDataCnt = (dataCnt - 2);
+        const int reducedParamCount = (paramCnt - 1);
+        const int reducedDevCount = (paramCnt - cntGaussian - 1);
+
+        for ( int i = 0 ; i < reducedDataCnt ; ++ i ) {
+            double f = 0.0;
 
             x[i] -= v->startChannel;
             x[i+1] -= v->startChannel;
 
-            for ( int device = paramCnt - cntGaussian - 1 ; device < paramCnt - 1 ; device += 3 )
-            {
-                const double gaussianSigma = fitParamArray[device]/(2*sqrt(log(2)));
+            for ( int device = reducedDevCount ; device < reducedParamCount ; device += 3 ) {
+                const double gaussianSigma = fitParamArray[device]/(2*sqrt(log(2))); /* transform FWHM to 1-sigma uncertainty */
                 const double gaussianMu = fitParamArray[device+1];
-                const double gaussianIntensity = fitParamArray[device+2];
 
-                for ( int param = 0 ; param <  paramCnt - cntGaussian - 1/*3*/ ; param += 2 ) // first param[0] = tau; second param[1] = Intensity
-                {
-                    //Eldrup-Formula:
+                const double gaussianIntensity = fitParamArray[device+2]; /* IRF contribution/intensity */
+
+                double valF = 0.0;
+
+                /* Kirkegaard and Eldrup (1972) */
+                for ( int param = 0 ; param <  reducedDevCount ; param += 2 ) { /* 1st param[0] = tau; 2nd param[1] = Intensity */
                     const double yji = exp(-(x[i]-gaussianMu-(gaussianSigma*gaussianSigma)/(4*fitParamArray[param]))/fitParamArray[param])*(1-erf((0.5*gaussianSigma/fitParamArray[param])-(x[i]-gaussianMu)/gaussianSigma));
                     const double yji_plus_1 = exp(-(x[i+1]-gaussianMu-(gaussianSigma*gaussianSigma)/(4*fitParamArray[param]))/fitParamArray[param])*(1-erf((0.5*gaussianSigma/fitParamArray[param])-(x[i+1]-gaussianMu)/gaussianSigma));
 
-                    f += 0.5*fitParamArray[param+1]/**fitParamArray[param]*/*(yji-yji_plus_1-erf((x[i]-gaussianMu)/gaussianSigma)+erf((x[i+1]-gaussianMu)/gaussianSigma));
+                    valF += 0.5*fitParamArray[param+1]*(yji-yji_plus_1-erf((x[i]-gaussianMu)/gaussianSigma)+erf((x[i+1]-gaussianMu)/gaussianSigma));
                 }
 
-                f *= gaussianIntensity;
+                valF *= gaussianIntensity; /* account for multiple Gaussian IRFs forming the final IRF */
+                f += valF;
             }
 
             x[i] += v->startChannel;
             x[i+1] += v->startChannel;
 
-            f *= ((double)v->integralCountsInROI)-(v->stopChannel-v->startChannel)*bkgrd;
+            f *= areaWithoutBkgrd;
             f += bkgrd;
 
-            dy[i] = weightedResidual(f, y[i], ey[i], v->weighting);
+            /* weighted residual calculation: note: ey[...] is already calculated as = 1/sqrt(y[i]) */
+            dy[i] = ey[i]*(y[i]-f);
         }
+
+        /* constraint: sum of all (Gaussian) IRFs be equal 1 */
+        if (cntGaussian > 1) {
+            double sumGaussianContribution = 0.0;
+            for ( int device = reducedDevCount ; device < reducedParamCount ; device += 3 ) {
+                sumGaussianContribution += fitParamArray[device+2];
+            }
+
+            dy[reducedDataCnt-1] = (sumGaussianContribution - 1)*1E4; /* 1E4 represents a tolarance factor to balance the satisfaction (sum IRFs = 1) of the constraint vs. the tolerance of the fitting parameters */
+        }
+        else
+            dy[reducedDataCnt-1] = 0.0;
 
         return 1;
 }
-
 
 LifeTimeDecayFitEngine::LifeTimeDecayFitEngine() :
     m_dataStructure(nullptr) {}
@@ -160,7 +135,7 @@ void LifeTimeDecayFitEngine::fit()
     if ( dataStructure->getDataSetPtr()->getLifeTimeData().isEmpty() )
         return;
 
-    //initialize the data-set:
+    //initialize data-set:
     const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1;
 
     double channelResolution = dataStructure->getFitSetPtr()->getChannelResolution(); //[ps/chn]
@@ -168,14 +143,13 @@ void LifeTimeDecayFitEngine::fit()
     double startChannel = dataStructure->getFitSetPtr()->getStartChannel();
     double stopChannel = dataStructure->getFitSetPtr()->getStopChannel();
     double peakChannel = 0;
-    double countsInPeak = -LONG_MAX;
+    double countsInPeak = -(double)(INT_MAX);
 
      int startChannelIndex = 0;
      int stopChannelIndex = 0;
      int peakChannelIndex = 0;
 
-     int channelCnt = 0;
-     int dataCntInRange = stopChannel-startChannel+1;
+     const int dataCntInRange = (stopChannel-startChannel+1) + 1; /* ROI + ( +1 = constraint for multiple Gaussian IRFs) */
 
      double *x = new double[dataCntInRange];
      double *y = new double[dataCntInRange];
@@ -184,24 +158,25 @@ void LifeTimeDecayFitEngine::fit()
      int inRangeCnt = 0;
      int integralCountROI = 0;
 
-     for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() )
-     {
-         if ( p.x() >= startChannel && p.x() <= stopChannel )
-         {
+     int channelCnt = 0;
+
+     for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() ) {
+         if ( ((int)p.x()) >= ((int)startChannel) && ((int)p.x()) <= ((int)stopChannel) ) { /* ROI? */
              x[inRangeCnt] = p.x();
              y[inRangeCnt] = p.y();
-             ey[inRangeCnt] = 0;
+
+             /* calculate error (weighting) (Poisson noise/statistical error) */
+             ey[inRangeCnt] = 1.0/sqrt(p.y() + 1.0); // prevent zero division
 
              integralCountROI += (int)p.y();
 
-             if ( p.x() == startChannel )
+             if ( ((int)p.x()) == ((int)startChannel) )
                  startChannelIndex = channelCnt;
 
-             if ( p.x() == stopChannel )
+             if ( ((int)p.x()) == ((int)stopChannel) )
                  stopChannelIndex = channelCnt;
 
-             if ( p.y() > countsInPeak )
-             {
+             if ( ((int)p.y()) > ((int)countsInPeak) ) {
                  countsInPeak = p.y();
                  peakChannel = p.x();
                  peakChannelIndex = channelCnt;
@@ -213,14 +188,24 @@ void LifeTimeDecayFitEngine::fit()
          channelCnt ++;
      }
 
-     values v;
+     /* additional residual to account for constraint regarding sum of multiple IRFs = 1 (0.0 = placeholder) */
+     x[inRangeCnt] = x[inRangeCnt-1]+1;
+     y[inRangeCnt] = 0.0f;
+     ey[inRangeCnt] = 0.0f;
 
-     v.dataCnt = dataCntInRange;
+     inRangeCnt ++;
+     channelCnt ++;
+
+
+     values v;
 
      v.x = x;
      v.y = y;
      v.yInitial = y;
      v.ey = ey;
+
+     v.dataCnt = dataCntInRange;
+
      v.peakValue = countsInPeak;
      v.startChannelIndex = startChannelIndex;
      v.stopChannelIndex = stopChannelIndex;
@@ -231,21 +216,19 @@ void LifeTimeDecayFitEngine::fit()
 
      v.countOfDeviceResolutionParams = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();
 
-     v.weighting = (dataStructure->getFitSetPtr()->usingYVariance()?residualWeighting::yvariance_Weighting:residualWeighting::no_Weighting);
+     v.weighting = residualWeighting::yerror_Weighting; /* fixed */
 
-    //Parameter constraints:
+
     mp_par *paramContraints = new mp_par[paramCnt];
 
     for ( int t = 0 ; t < paramCnt ; ++ t ) {
         paramContraints[t] = {0};
     }
 
-    //Parameter initial conditions:
-    double *params = new double[paramCnt]; //source->sample->gaussian->bkgrd
+    double *params = new double[paramCnt]; /* following order: source => sample => gaussian => bkgrd */
 
     int i = 0;
-    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getSourceParamPtr()->getParameterAt(i);
         params[i] = fitParam->getStartValue()/channelResolution; //tau
 
@@ -352,8 +335,7 @@ void LifeTimeDecayFitEngine::fit()
     }
 
     int cnt = 0;
-    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(cnt);
         params[i] = fitParam->getStartValue()/channelResolution; //tau
 
@@ -463,14 +445,10 @@ void LifeTimeDecayFitEngine::fit()
         cnt ++;
     }
 
-    /***********************************************************************/
-
     int cntGaussian= 0;
-    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
         params[i] = fitParam->getStartValue()/channelResolution; //FWHM
-
 
 #ifdef __FITPARAM_DEBUG
         qDebug() << "";
@@ -634,13 +612,10 @@ void LifeTimeDecayFitEngine::fit()
         cntGaussian ++;
     }
 
-    /***********************************************************************/
-
-    //Gaussian-sigma, Gaussian-mu, Background:
+    /* Gaussian-sigma, Gaussian-mu & Background: */
     PALSFitParameter *bkgrd = dataStructure->getFitSetPtr()->getBackgroundParamPtr()->getParameter();
 
-    //at the moment there is no variation of the background = const.!
-    bkgrd->setAsFixed(true);
+    /* background = const. */
     bkgrd->setLowerBoundingEnabled(false);
     bkgrd->setUpperBoundingEnabled(false);
 
@@ -648,7 +623,7 @@ void LifeTimeDecayFitEngine::fit()
 
     params[bkgrdIndex] = bkgrd->getStartValue();
 
-    v.peakToBackgroundRatio = (double)(countsInPeak-bkgrd->getStartValue())/bkgrd->getStartValue();
+    //v.peakToBackgroundRatio = (double)(countsInPeak-bkgrd->getStartValue())/bkgrd->getStartValue();
 
 #ifdef __FITPARAM_DEBUG
         qDebug() << "";
@@ -699,7 +674,52 @@ void LifeTimeDecayFitEngine::fit()
     else
         paramContraints[bkgrdIndex].limited[1] = 0;
 
-    ///Returned parameter errors:
+
+    /* calculate the correct reduced chi square on start (orignorm) */
+    double residuals = 0.0;
+    const int reducedCntInRange = (dataCntInRange - 2);
+    const int reducedDevCount = (paramCnt - cntGaussian - 1);
+    const int reducedParamCount = (paramCnt - 1);
+    const double integralCountsWithoutBkgrd = (double)v.integralCountsInROI-(double)(dataCntInRange-1)*params[bkgrdIndex];
+
+    for ( int i = 0 ; i < reducedCntInRange ; ++ i ) {
+        double f = 0.0;
+
+        x[i] -= startChannel;
+        const double x_plus_1 = x[i+1]-startChannel;
+
+        for ( int device = reducedDevCount ; device < reducedParamCount ; device += 3 ) {
+            const double gaussianSigmaVal = params[device]/(2*sqrt(log(2))); /* transform FWHM to 1-sigma uncertainty */
+            const double gaussianMuVal = params[device+1];
+
+            const double gaussianIntensity = params[device+2]; /* IRF contribution */
+
+            double valF = 0.0;
+
+            /* Kirkegaard and Eldrup (1972) */
+            for ( int param = 0 ; param <  reducedDevCount ; param += 2 ) { /* 1st param[0] = tau; 2nd param[1] = Intensity */
+                const double yji = exp(-(x[i]-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x[i]-gaussianMuVal)/gaussianSigmaVal));
+                const double yji_plus_1 = exp(-(x_plus_1-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+
+                valF += 0.5*params[param+1]*(yji-yji_plus_1-erf((x[i]-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+            }
+
+            valF *= gaussianIntensity;
+            f += valF;
+        }
+
+        x[i] += startChannel;
+
+        f *= integralCountsWithoutBkgrd;
+        f += params[bkgrdIndex];
+
+        residuals += (y[i]-f)*(y[i]-f)*ey[i]*ey[i];
+    }
+
+    v.chiSquareOrig = residuals;
+
+
+    /* returned parameter uncertainties (1-sigma): */
     double *paramErrors = new double[paramCnt];
     double *finalResiduals = new double[dataCntInRange];
 
@@ -714,17 +734,68 @@ void LifeTimeDecayFitEngine::fit()
 
     config.maxiter = dataStructure->getFitSetPtr()->getMaximumIterations();
 
-    //run the fit:
-    int stat = mpfit(lifeTimeDecaySum,
-                              dataCntInRange,
-                              paramCnt,
-                              params,
-                              paramContraints,
-                              &config,
-                              (void*) &v,
-                              &result);
 
-    DUNUSED_PARAM(stat);
+    /* auto optimize chi-square*/
+    double currentChiSquare = (double)(INT_MAX - 1);
+    double chiSquareMem = (currentChiSquare + 1);
+
+    int fitRun = 0;
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "******* mpfit started *********";
+#endif
+    v.chiSquareStart[fitRun] = v.chiSquareOrig;
+
+    while (chiSquareMem > currentChiSquare) {
+        /* run mpfit least-square minimization */
+        const int stat = mpfit(multiExpDecay,
+                                  dataCntInRange,
+                                  paramCnt,
+                                  params,
+                                  paramContraints,
+                                  &config,
+                                  (void*) &v,
+                                  &result);
+
+        currentChiSquare = result.bestnorm;
+        chiSquareMem = result.orignorm;
+
+        v.chiSquareFinal[fitRun] = result.bestnorm;
+        v.chiSquareStart[fitRun+1] = v.chiSquareFinal[fitRun];
+
+        v.niter[fitRun] = result.niter;
+
+        fitRun ++;
+        v.mpfitRuns ++;
+
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "run: " % QVariant(fitRun).toString();
+            qDebug() << "chi-square: " % QVariant(currentChiSquare).toString() % QString(" (") % QVariant(chiSquareMem).toString() % QString(")");
+            qDebug() << "niterations: " % QVariant(v.niter[fitRun-1]).toString();
+            qDebug() << "status: " % QVariant(stat).toString() % " (" % PALSFitErrorCodeStringBuilder::errorString(stat) % ")";
+#endif
+
+        /* maximum exceeded ? */
+        if ( fitRun == 20 ) {
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "LIMIT EXCEEDED";
+#endif
+            break;
+        }
+
+        if (stat < MP_OK_CHI) {
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "FIT STATUS: ! (not) OK";
+#endif
+            break;
+        }
+
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "";
+#endif
+    }
+#ifdef __FITQUEUE_DEBUG
+            qDebug() << "******* mpfit finished *********";
+#endif
 
     updateDataStructureFromResult(dataStructure, &result, &v, params);
 
@@ -741,30 +812,27 @@ void LifeTimeDecayFitEngine::fit()
     emit finished();
 }
 
-QList<QPointF> LifeTimeDecayFitEngine::getFitPlotPoints() const
-{
+QList<QPointF> LifeTimeDecayFitEngine::getFitPlotPoints() const {
     return m_fitPlotSet;
 }
 
-void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *dataStructure, mp_result *result, values *v, double *params)
-{
+void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *dataStructure, mp_result *result, values *v, double *params) {
     m_fitPlotSet.clear();
 
-    dataStructure->getFitSetPtr()->setNeededIterations((unsigned int)result->niter);
+    dataStructure->getFitSetPtr()->setNeededIterations((unsigned int)v->niter[0]); /* not used */
     dataStructure->getFitSetPtr()->setCountsInRange(v->integralCountsInROI);
-    dataStructure->getFitSetPtr()->setPeakToBackgroundRatio(v->peakToBackgroundRatio);
     dataStructure->getFitSetPtr()->setTimeStampOfLastFitResult(QDateTime::currentDateTime().toString());
     dataStructure->getFitSetPtr()->setFitFinishCodeValue(result->status);
     dataStructure->getFitSetPtr()->setFitFinishCode(PALSFitErrorCodeStringBuilder::errorString(result->status));
 
     const double channelResolution = dataStructure->getFitSetPtr()->getChannelResolution();
-    const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1;
+    const int paramCnt = dataStructure->getFitSetPtr()->getComponentsCount() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() + 1; // incl. background
 
     double sumOfIntensities = 0.0f;
+    double sumErrorOfIntensities = 0.0f;
 
     int i = 0;
-    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 ) {
         PALSFitParameter *param_tau = dataStructure->getFitSetPtr()->getSourceParamPtr()->getParameterAt(i);
         param_tau->setFitValue(params[i]*channelResolution);
         param_tau->setFitValueError(result->xerror[i]*channelResolution);
@@ -774,14 +842,14 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
         param_I->setFitValueError(result->xerror[i+1]);
 
         sumOfIntensities += param_I->getFitValue();
+        sumErrorOfIntensities += param_I->getFitValueError()*param_I->getFitValueError();
     }
 
     double tauAverage = 0.0f;
     double tauAverageError = 0.0f;
 
     int cnt = 0;
-    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize()+dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize()+dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize() ; i+=2 ) {
         PALSFitParameter *param_tau = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(cnt);
         param_tau->setFitValue(params[i]*channelResolution);
         param_tau->setFitValueError(result->xerror[i]*channelResolution);
@@ -796,6 +864,7 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
         param_I->setFitValueError(result->xerror[i+1]);
 
         sumOfIntensities += param_I->getFitValue();
+        sumErrorOfIntensities += param_I->getFitValueError()*param_I->getFitValueError();
 
         cnt ++;
     }
@@ -803,16 +872,15 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
     tauAverage /= (double)(cnt/2);
     tauAverageError = sqrtf(tauAverageError);
 
+    sumErrorOfIntensities = sqrtf(sumErrorOfIntensities);
+
     dataStructure->getFitSetPtr()->setAverageLifeTime(tauAverage);
     dataStructure->getFitSetPtr()->setAverageLifeTimeError(tauAverageError);
     dataStructure->getFitSetPtr()->setSumOfIntensities(sumOfIntensities);
-
-
-    /********************************************************************************************/
+    dataStructure->getFitSetPtr()->setErrorSumOfIntensities(sumErrorOfIntensities);
 
     int cntGaussian= 0;
-    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 ) {
         PALSFitParameter *param_sigma = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
         param_sigma->setFitValue(params[i]*channelResolution);
         param_sigma->setFitValueError(result->xerror[i]*channelResolution);
@@ -832,47 +900,50 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
         cntGaussian ++;
     }
 
-    /********************************************************************************************/
-
-    const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();//+2;
+    const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();
 
     PALSFitParameter *bkgrd = dataStructure->getFitSetPtr()->getBackgroundParamPtr()->getParameter();
     bkgrd->setFitValue(params[bkgrdIndex]);
     bkgrd->setFitValueError(result->xerror[bkgrdIndex]);
 
+    /* Peak-to-Background ratio */
+    v->peakToBackgroundRatio = (double)(v->peakValue-bkgrd->getFitValue())/bkgrd->getFitValue();
 
-    double chiSquare = 0.0f;
+    dataStructure->getFitSetPtr()->setPeakToBackgroundRatio(v->peakToBackgroundRatio);
 
     QList<QPointF> residuals;
 
     const double bkgrdVal = params[bkgrdIndex];
-    double intergralCountsWithoutBkgrd = ((double)v->integralCountsInROI)-(v->stopChannel-v->startChannel)*bkgrdVal;
+    double intergralCountsWithoutBkgrd = ((double)v->integralCountsInROI)-(v->stopChannel-v->startChannel+1)*bkgrdVal;
+    const int reducedDataCnt = (v->dataCnt - 2);
+    const int reducedDevCount = (paramCnt - cntGaussian - 1);
+    const int reducedParamCnt = (paramCnt - 1);
     double tZeroChannel = 0;
     int tZeroIndex = 0;
     double maxf = -1;
+    double chiSquare = 0.0;
 
-    for ( int i = 0 ; i < v->dataCnt-1 ; ++ i )
-    {
-        double f = 0;
+    for ( int i = 0 ; i < reducedDataCnt ; ++ i ) {
+        double f = 0.0;
         double x = v->x[i]-v->startChannel;
         double x_plus_1 = v->x[i+1]-v->startChannel;
 
-        for ( int device = paramCnt - cntGaussian - 1 ; device < paramCnt - 1 ; device += 3 )
-        {
+        for ( int device = reducedDevCount ; device < reducedParamCnt ; device += 3 ) {
             const double gaussianSigmaVal = params[device]/(2*sqrt(log(2)));
             const double gaussianMuVal = params[device+1];
             const double gaussianIntensity = params[device+2];
 
-            for ( int param = 0 ; param <  paramCnt - cntGaussian - 1/*3*/ ; param += 2 ) // first param[0] = tau; second param[1] = Intensity
-            {
-                //Eldrup-Formula:
+            double valF = 0.0;
+
+            for ( int param = 0 ; param <  reducedDevCount ; param += 2 ) { /* 1st param[0] = tau; 2nd param[1] = intensity */
                 const double yji = exp(-(x-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x-gaussianMuVal)/gaussianSigmaVal));
                 const double yji_plus_1 = exp(-(x_plus_1-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x_plus_1-gaussianMuVal)/gaussianSigmaVal));
 
-                f += 0.5*params[param+1]/**params[param]*/*(yji-yji_plus_1-erf((x-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+                valF += 0.5*params[param+1]*(yji-yji_plus_1-erf((x-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
             }
 
-            f *= gaussianIntensity;
+            valF *= gaussianIntensity;
+            f += valF;
         }
 
         x += v->startChannel;
@@ -886,18 +957,17 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
             tZeroIndex = i;
         }
 
-        if ( !qFuzzyCompare(v->y[i], 0.0) )
-            chiSquare += (f-v->y[i])*(f-v->y[i])/v->y[i];
+        chiSquare += (v->y[i]-f)*(v->y[i]-f)*v->ey[i]*v->ey[i];
 
-        const double res = (f-v->y[i])/sqrt(v->y[i]);
+        const double res = result->resid[i]; /* weighted to v->ey[i] => 1/sqrt(y[i]) */
 
         m_fitPlotSet.append(QPointF(x, f));
         residuals.append(QPointF(x, res));
     }
 
-    //center of mass (spectral centroid):
-    double tCenter = 0;
-    double sumOfCounts = 0;
+    /* center of mass (spectral centroid) */
+    double tCenter = 0.0;
+    double sumOfCounts = 0.0;
     for ( int i = tZeroIndex ; i < m_fitPlotSet.size()-1 ; ++ i ) {
         const double time = ((m_fitPlotSet.at(i).x()-tZeroChannel) + 0.5)*channelResolution;
         const double counts = 0.5*(m_fitPlotSet.at(i).y()+m_fitPlotSet.at(i+1).y());
@@ -908,8 +978,16 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
 
     tCenter /= sumOfCounts;
 
-    chiSquare /= (double)v->dataCnt;
+    /* reduced chi-square */
+    chiSquare /= (double)(v->dataCnt - result->nfree);
+    const double chiSquareOnStart = v->chiSquareOrig/(double)(v->dataCnt - result->nfree);
 
+    for (int i = 0 ; i < v->mpfitRuns ; ++ i) {
+        v->chiSquareStart[i] /= (double)(v->dataCnt - result->nfree);
+        v->chiSquareFinal[i] /= (double)(v->dataCnt - result->nfree);
+    }
+
+    dataStructure->getFitSetPtr()->setChiSquareOnStart(chiSquareOnStart);
     dataStructure->getFitSetPtr()->setChiSquareAfterFit(chiSquare);
 
     dataStructure->getFitSetPtr()->setTZeroSpectralCentroid((tZeroChannel-v->startChannel)*channelResolution);
@@ -918,14 +996,12 @@ void LifeTimeDecayFitEngine::updateDataStructureFromResult(PALSDataStructure *da
     dataStructure->getDataSetPtr()->setResiduals(residuals);
     dataStructure->getDataSetPtr()->setFitData(m_fitPlotSet);
 
-    createResultString(dataStructure);
+    createResultString(dataStructure, v);
 }
 
-void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure)
-{
-    if ( !dataStructure )
+void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure, values *v) {
+    if ( !dataStructure || !v )
         return;
-
 
     const PALSFitSet *fitSet = dataStructure->getFitSetPtr();
 
@@ -954,6 +1030,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString alertHtml = "<font color=\"DeepPink\">";
     const QString notifyHtml = "<font color=\"Lime\">";
     const QString infoHtml = "<font color=\"Aqua\">";
+    const QString info2Html = "<font color=\"blue\">";
     const QString endHtml = "</font>";
 
     const QString projectName("<nobr><b>Project:</b></nobr>");
@@ -969,20 +1046,14 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     if ( fitSet->getFitFinishCodeValue() <= 0 )
         fitFinishCodeVal = QString("<nobr><b>" % alertHtml % fitSet->getFitFinishCode() % " </b>" % endHtml % "[" % fitSet->getTimeStampOfLastFitResult() % "]</nobr>");
 
-    const QString chiSquare("<nobr><b>&#935;<sup>2</sup>:</b></nobr>");
+    const QString chiSquare("<nobr><b>&#935;<sub>&#957;</sub><sup>2</sup>:</b></nobr>");
     const QString chiSquareVal("<nobr><b>" % QString::number(fitSet->getChiSquareAfterFit(), 'g', 4) % "</b> (" % QString::number(fitSet->getChiSquareOnStart(), 'g', 4) % " @ start)" % "</nobr>");
 
     const QString fitWeighting("<nobr><b>Fit-Weighting:</b></nobr>");
-    const QString fitWeightingVal("<nobr><b>" % QString((!fitSet->getUsingYVariance()?QString("no weighting"):QString("variance"))) % "</b></nobr>");
+    const QString fitWeightingVal("<nobr><b>" % QString("sqrt[counts]") % "</b></nobr>");
 
-
-    const QString iterations("<nobr><b>Iterations:</b></nobr>");
-    QString iterationsVal = "";
-
-    if ( fitSet->getNeededIterations() == fitSet->getMaximumIterations() || fitSet->getNeededIterations() == 0 )
-        iterationsVal = QString("<nobr><b>" % alertHtml % QVariant((int)fitSet->getNeededIterations()).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % endHtml % "</b></nobr>");
-    else
-        iterationsVal = QString("<nobr><b>" % QVariant((int)fitSet->getNeededIterations()).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % "</b></nobr>");
+    const QString fitRuns("<nobr><b>Fit-Runs:</b></nobr>");
+    QString fitRunsVal = QString("<nobr><b>" % info2Html % QVariant(v->mpfitRuns).toString() % "/" % QVariant(20).toString() % endHtml % "</b></nobr>");
 
     const QString binFac("<nobr>Bin-Factor:</nobr>");
     const QString binFacVal("<nobr><b>" % QVariant(dataStructure->getDataSetPtr()->getBinFactor()).toString() % " </b></nobr>");
@@ -994,7 +1065,13 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString channelResolutionVal("<nobr><b>" % QVariant(fitSet->getChannelResolution()).toString() % " </b>ps</nobr>");
 
     const QString backgroundCounts("<nobr>Background:</nobr>");
-    const QString backgroundCountsVal("<nobr><b>" % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getStartValue(), 'f', 4) % "</b></nobr>");
+
+    QString backgroundCountsVal = "";
+
+    if (!fitSet->getBackgroundParamPtr()->getParameter()->isFixed())
+        backgroundCountsVal = QString("<nobr><b>" % info2Html % "( " % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getFitValueError(), 'f', 4) % " )" % endHtml % " / start-value: " % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getStartValue(), 'f', 4) % "</b></nobr>");
+    else
+        backgroundCountsVal = QString("<nobr><b>" % QString::number(fitSet->getBackgroundParamPtr()->getParameter()->getStartValue(), 'f', 4) % alertHtml % " ( fixed ) " % endHtml % "</b></nobr>");
 
     const QString countsInRange("<nobr>Integral Counts in ROI:</nobr>");
     const QString countsInRangeVal("<nobr><b>" % QVariant(fitSet->getCountsInRange()).toString() % "</b></nobr>");
@@ -1005,17 +1082,25 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString centerOfMass("<nobr>Center of Mass:</nobr>");
     const QString centerOfMassVal("<nobr><b>" %  QString::number(fitSet->getSpectralCentroid(), 'f', 4) % " </b>ps (estimated t<sub>0</sub>: <b>" % QString::number(fitSet->getT0SpectralCentroid(), 'f', 4) % "</b> ps) - ROI: [" % QVariant(fitSet->getStartChannel()).toString() % ":" % QVariant(fitSet->getStopChannel()).toString() % "]</nobr>");
 
-
     const QString fitParamCount("<nobr>Fit-Parameter Count:</nobr>");
     const QString fitParamCountVal("<nobr><b>" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "</b></nobr>");
 
-
     const QString sumOfIntensities("<nobr>Sum of Component's Intensities:       </nobr>");
-    QString sumOfIntensitiesVal;
-    if ( fitSet->getSumOfIntensities() > 1.0f || fitSet->getSumOfIntensities() < 0.0f )
-        sumOfIntensitiesVal = QString("<nobr><b>" % alertHtml % QString::number(fitSet->getSumOfIntensities(), 'f', 3) % endHtml % "</b></nobr>");
-    else
-        sumOfIntensitiesVal = QString("<nobr><b>" % notifyHtml % QString::number(fitSet->getSumOfIntensities(), 'f', 3) % endHtml % "</b></nobr>");
+    const QString sumOfIntensitiesVal = QString("<nobr><b>" % info2Html % "( " % QString::number(fitSet->getSumOfIntensities(), 'f', 4) %  " &plusmn; " % QString::number(fitSet->getErrorSumOfIntensities(), 'f', 4) % " )" % endHtml % "</b></nobr>");
+
+    const QString sumOfIRFIntensities("<nobr>Sum of IRF (Gaussian) Component's Intensities:       </nobr>");
+
+    double sumIRF = 0.0;
+    double sumIRFError = 0.0;
+
+    for (int i = 0 ; i < fitSet->getDeviceResolutionParamPtr()->getSize() ; i += 3) {
+        sumIRF += fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValue();
+        sumIRFError += fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValueError()*fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValueError();
+    }
+
+    sumIRFError = sqrt(sumIRFError);
+
+    const QString sumOfIRFIntensitiesVal = QString("<nobr><b>" % alertHtml % "( " % QString::number(sumIRF, 'f', 4) % " &plusmn; " % QString::number(sumIRFError, 'f', 4) % " )" % endHtml % "</b></nobr>");
 
 
     const QString tauAverage("<nobr><b>&#964;<sub>average</sub>:</b></nobr>");
@@ -1031,15 +1116,43 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     /*finish code and time/date:*/resultString = resultString % startRow % startContent % fitFinishCode % finishContent % startContent % fitFinishCodeVal % finishContent % finishRow % lineBreak;
 
-    /*chi-square:*/resultString = resultString % startRow % startContent % chiSquare % finishContent % startContent % chiSquareVal % finishContent % finishRow % lineBreak;
+    /*reduced chi-square:*/resultString = resultString % startRow % startContent % chiSquare % finishContent % startContent % chiSquareVal % finishContent % finishRow % lineBreak;
     /*fit-weighting:*/resultString = resultString % startRow % startContent % fitWeighting % finishContent % startContent % fitWeightingVal % finishContent % finishRow % lineBreak;
 
-    /*iterations:*/resultString = resultString % startRow % startContent % iterations % finishContent % startContent % iterationsVal % finishContent % finishRow % lineBreak;
+    /*fit-runs:*/resultString = resultString % startRow % startContent % fitRuns % finishContent % startContent % fitRunsVal % finishContent % finishRow % lineBreak;
 
+    resultString = resultString % tableBorderStart;
+
+    /* header: */
+    resultString = resultString % startRow % startHeader % spacer % "run" % spacer % endHeader % startHeader % spacer % "iterations" % spacer % endHeader % startHeader % spacer % "   &#935;<sub>&#957;</sub><sup>2</sup> (final)   " % spacer % endHeader % startHeader % spacer % "   &#935;<sub>&#957;</sub><sup>2</sup> (start)  " % spacer % endHeader % finishRow;
+
+    for (int i = 0 ; i < v->mpfitRuns ; ++ i) {
+        const QString runString = QString("<nobr><b>" % spacer % info2Html % QVariant(i+1).toString() % endHtml % spacer % "</b></nobr>");
+
+        QString iterString = "";
+
+        if (fitSet->getMaximumIterations() == v->niter[i]) {
+            iterString = QString("<nobr><b>" % alertHtml % spacer % QVariant(v->niter[i]).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % spacer % endHtml % "</b></nobr>");
+        }
+        else {
+            iterString = QString("<nobr><b>" % spacer % QVariant(v->niter[i]).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % spacer % "</b></nobr>");
+        }
+
+        const QString finalChiSqString = QString("<nobr><b>" % spacer % QString::number(v->chiSquareFinal[i], 'f', 4) % spacer % "</b></nobr>");
+        const QString startChiSqString = QString("<nobr><b>" % spacer % QString::number(v->chiSquareStart[i], 'f', 4) % spacer % "</b></nobr>");
+
+        const QString startContentAligned = startContent % alignCenterStart;
+        const QString finishContentAligned = alignCenterEnd % finishContent;
+
+        resultString = resultString % startRow % startContentAligned % runString % finishContentAligned % startContentAligned % iterString % finishContentAligned % startContentAligned % finalChiSqString % finishContentAligned % startContentAligned % startChiSqString % finishContentAligned % finishRow;
+    }
+
+    resultString = resultString % tableBorderEnd;
+    resultString = resultString % startRow % startContent % lineBreak % finishContent % finishRow;
 
     /*Channel-Range:*/resultString = resultString % startRow % startContent % channelRange % finishContent % startContent % channelRangeVal % finishContent % finishRow;
     /*Channel-Resolution:*/resultString = resultString % startRow % startContent % channelResolution % finishContent % startContent % channelResolutionVal % finishContent % finishRow;
-    /*Channel-Resolution:*/resultString = resultString % startRow % startContent % binFac % finishContent % startContent % binFacVal % finishContent % finishRow % lineBreak;
+    /*Binning-Factor:*/resultString = resultString % startRow % startContent % binFac % finishContent % startContent % binFacVal % finishContent % finishRow % lineBreak;
 
     /*Background-Counts:*/resultString = resultString % startRow % startContent % backgroundCounts % finishContent % startContent % backgroundCountsVal % finishContent % finishRow;
     /*Counts in Range:*/resultString = resultString % startRow % startContent % countsInRange % finishContent % startContent % countsInRangeVal % finishContent % finishRow;
@@ -1062,16 +1175,24 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     resultString = resultString % tableBorderStart;
 
-    //header:
-    resultString = resultString % startRow % startHeader % spacer % "   name   " % spacer % endHeader % startHeader % spacer % "   fit-value   " % spacer % endHeader % startHeader % spacer % "   start-value   " % spacer % endHeader % startHeader % spacer %  "   lower-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   upper-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   fixed?   " % spacer % endHeader % finishRow;
+    /* header: */
+    resultString = resultString % startRow % startHeader % spacer % "   name   " % spacer % endHeader % startHeader % spacer % "   fit-value   " % spacer % endHeader % startHeader % spacer % "   fit-value " % info2Html % " scaled   " % endHtml % spacer % endHeader % startHeader % spacer % "   start-value   " % spacer % endHeader % startHeader % spacer %  "   lower-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   upper-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   fixed?   " % spacer % endHeader % finishRow;
 
-    for ( int i = 0 ; i < fitSet->getLifeTimeParamPtr()->getSize() ; i += 2 )
-    {
+    for ( int i = 0 ; i < fitSet->getLifeTimeParamPtr()->getSize() ; i += 2 ) {
         const QString nameAndAliasTau("<nobr><b>" % spacer % QString(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getAlias()) % "</b> (" % QString(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getName()) % ")" % spacer %"</nobr>");
         const QString nameAndAliasIntensity("<nobr><b>"  % spacer % QString(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getAlias()) % "</b> (" % QString(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getName()) % ")" % spacer % "</nobr>");
 
-        const QString tau("<nobr><b>" % spacer % "( " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getFitValueError(), 'f', 4) % " )</b> ps" % spacer % "</nobr>");
+        const QString tau("<nobr><b>" % spacer % alertHtml % "( " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getFitValueError(), 'f', 4) % " )</b> ps" % endHtml % spacer % "</nobr>");
         const QString intensity("<nobr><b>" % spacer % "( " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValueError(), 'f', 4) % " )" % spacer % "</b></nobr>");
+
+        const double scaledErrorIntensity_1 =  (fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValueError()/fitSet->getSumOfIntensities())*(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValueError()/fitSet->getSumOfIntensities());
+        const double scaledErrorIntensity_2 =  ((fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValue()*fitSet->getSumOfIntensities()*fitSet->getErrorSumOfIntensities())/(fitSet->getSumOfIntensities()*fitSet->getSumOfIntensities()))*((fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValue()*fitSet->getSumOfIntensities()*fitSet->getErrorSumOfIntensities())/(fitSet->getSumOfIntensities()*fitSet->getSumOfIntensities()));
+        const double scaledIntensity = fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getFitValue()/fitSet->getSumOfIntensities();
+        const double scaledErrorIntensity = sqrt(scaledErrorIntensity_1 + scaledErrorIntensity_2)*scaledIntensity;
+
+        const QString tauScaled("");
+        const QString intensityScaled("<nobr><b>" % info2Html % spacer % "( " % QString::number(scaledIntensity, 'f', 4) % " &plusmn; " % QString::number(scaledErrorIntensity, 'f', 4) % " )" % spacer % endHtml % "</b></nobr>");
+
 
         const QString tauStart("<nobr>" % spacer % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i)->getStartValue(), 'f', 4) % " ps" % spacer % "</nobr>");
         const QString IntensityStart("<nobr>" % spacer % QString::number(fitSet->getLifeTimeParamPtr()->getParameterAt(i+1)->getStartValue(), 'f', 4) % spacer % "</nobr>");
@@ -1116,13 +1237,12 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
         const QString startContentAligned = startContent % alignCenterStart;
         const QString finishContentAligned = alignCenterEnd % finishContent;
 
-        resultString = resultString % startRow % startContentAligned % nameAndAliasTau % finishContentAligned % startContentAligned % tau % finishContentAligned % startContentAligned % tauStart % finishContentAligned % startContentAligned % lowerLimitTau % finishContentAligned % startContentAligned % upperLimitTau % finishContentAligned % startContentAligned % fixedTau % finishContentAligned % finishRow;
-        resultString = resultString % startRow % startContentAligned % nameAndAliasIntensity % finishContentAligned % startContentAligned % intensity % finishContentAligned % startContentAligned % IntensityStart % finishContentAligned % startContentAligned % lowerLimitIntensity % finishContentAligned % startContentAligned % upperLimitIntensity % finishContentAligned % startContentAligned % fixedIntensity % finishContentAligned % finishRow;
+        resultString = resultString % startRow % startContentAligned % nameAndAliasTau % finishContentAligned % startContentAligned % tau % finishContentAligned % startContentAligned % tauScaled % finishContentAligned % startContentAligned % tauStart % finishContentAligned % startContentAligned % lowerLimitTau % finishContentAligned % startContentAligned % upperLimitTau % finishContentAligned % startContentAligned % fixedTau % finishContentAligned % finishRow;
+        resultString = resultString % startRow % startContentAligned % nameAndAliasIntensity % finishContentAligned % startContentAligned % intensity % finishContentAligned % startContentAligned % intensityScaled % finishContentAligned % startContentAligned % IntensityStart % finishContentAligned % startContentAligned % lowerLimitIntensity % finishContentAligned % startContentAligned % upperLimitIntensity % finishContentAligned % startContentAligned % fixedIntensity % finishContentAligned % finishRow;
     }
 
     resultString = resultString % tableBorderEnd;
     resultString = resultString % lineBreak % lineBreak;
-
 
 
     /*Source-Components:*/
@@ -1130,16 +1250,24 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     resultString = resultString % tableBorderStart;
 
-    //header:
-    resultString = resultString % startRow % startHeader % spacer % "   name   " % spacer % endHeader % startHeader % spacer % "   fit-value   " % spacer % endHeader % startHeader % spacer % "   start-value   " % spacer % endHeader % startHeader % spacer %  "   lower-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   upper-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   fixed?   " % spacer % endHeader % finishRow;
+    /* header: */
+    resultString = resultString % startRow % startHeader % spacer % "   name   " % spacer % endHeader % startHeader % spacer % "   fit-value   " % spacer % endHeader % startHeader % spacer % "   fit-value " % info2Html % " scaled   " % endHtml % spacer % endHeader % startHeader % spacer % "   start-value   " % spacer % endHeader % startHeader % spacer %  "   lower-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   upper-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   fixed?   " % spacer % endHeader % finishRow;
 
-    for ( int i = 0 ; i < fitSet->getSourceParamPtr()->getSize() ; i += 2 )
-    {
+    for ( int i = 0 ; i < fitSet->getSourceParamPtr()->getSize() ; i += 2 ) {
         const QString nameAndAliasTau("<nobr><b>" % spacer % QString(fitSet->getSourceParamPtr()->getParameterAt(i)->getAlias()) % "</b> (" % QString(fitSet->getSourceParamPtr()->getParameterAt(i)->getName()) % ")" % spacer %"</nobr>");
         const QString nameAndAliasIntensity("<nobr><b>"  % spacer % QString(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getAlias()) % "</b> (" % QString(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getName()) % ")" % spacer % "</nobr>");
 
         const QString tau("<nobr><b>" % spacer % "( " % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i)->getFitValueError(), 'f', 4) % " )</b> ps" % spacer % "</nobr>");
         const QString intensity("<nobr><b>" % spacer % "( " % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValueError(), 'f', 4) % " )" % spacer % "</b></nobr>");
+
+        const double scaledErrorIntensity_1 =  (fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValueError()/fitSet->getSumOfIntensities())*(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValueError()/fitSet->getSumOfIntensities());
+        const double scaledErrorIntensity_2 =  ((fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValue()*fitSet->getSumOfIntensities()*fitSet->getErrorSumOfIntensities())/(fitSet->getSumOfIntensities()*fitSet->getSumOfIntensities()))*((fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValue()*fitSet->getSumOfIntensities()*fitSet->getErrorSumOfIntensities())/(fitSet->getSumOfIntensities()*fitSet->getSumOfIntensities()));
+        const double scaledIntensity = fitSet->getSourceParamPtr()->getParameterAt(i+1)->getFitValue()/fitSet->getSumOfIntensities();
+        const double scaledErrorIntensity = sqrt(scaledErrorIntensity_1 + scaledErrorIntensity_2)*scaledIntensity;
+
+        const QString tauScaled("");
+        const QString intensityScaled("<nobr><b>" % info2Html % spacer % "( " % QString::number(scaledIntensity, 'f', 4) % " &plusmn; " % QString::number(scaledErrorIntensity, 'f', 4) % " )" % spacer % endHtml % "</b></nobr>");
+
 
         const QString tauStart("<nobr>" % spacer % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i)->getStartValue(), 'f', 4) % " ps" % spacer % "</nobr>");
         const QString IntensityStart("<nobr>" % spacer % QString::number(fitSet->getSourceParamPtr()->getParameterAt(i+1)->getStartValue(), 'f', 4) % spacer % "</nobr>");
@@ -1184,31 +1312,29 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
         const QString startContentAligned = startContent % alignCenterStart;
         const QString finishContentAligned = alignCenterEnd % finishContent;
 
-        resultString = resultString % startRow % startContentAligned % nameAndAliasTau % finishContentAligned % startContentAligned % tau % finishContentAligned % startContentAligned % tauStart % finishContentAligned % startContentAligned % lowerLimitTau % finishContentAligned % startContentAligned % upperLimitTau % finishContentAligned % startContentAligned % fixedTau % finishContentAligned % finishRow;
-        resultString = resultString % startRow % startContentAligned % nameAndAliasIntensity % finishContentAligned % startContentAligned % intensity % finishContentAligned % startContentAligned % IntensityStart % finishContentAligned % startContentAligned % lowerLimitIntensity % finishContentAligned % startContentAligned % upperLimitIntensity % finishContentAligned % startContentAligned % fixedIntensity % finishContentAligned % finishRow;
+        resultString = resultString % startRow % startContentAligned % nameAndAliasTau % finishContentAligned % startContentAligned % tau % finishContentAligned % startContentAligned % tauScaled % finishContentAligned % startContentAligned % tauStart % finishContentAligned % startContentAligned % lowerLimitTau % finishContentAligned % startContentAligned % upperLimitTau % finishContentAligned % startContentAligned % fixedTau % finishContentAligned % finishRow;
+        resultString = resultString % startRow % startContentAligned % nameAndAliasIntensity % finishContentAligned % startContentAligned % intensity % finishContentAligned % startContentAligned % intensityScaled % finishContentAligned % startContentAligned % IntensityStart % finishContentAligned % startContentAligned % lowerLimitIntensity % finishContentAligned % startContentAligned % upperLimitIntensity % finishContentAligned % startContentAligned % fixedIntensity % finishContentAligned % finishRow;
     }
 
     resultString = resultString % tableBorderEnd;
     resultString = resultString % lineBreak % lineBreak;
 
-
     /*IRF-Components:*/
-    resultString = resultString % "<nobr><b><big>" % "IRF-Components [" % "2/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big></nobr>";
+    resultString = resultString % "<nobr><b><big>" % "IRF (Gaussian)-Components [" % QVariant(fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big>" % startContent % sumOfIRFIntensities % finishContent % startContent % sumOfIRFIntensitiesVal % finishContent % "</nobr>";
 
     resultString = resultString % tableBorderStart;
 
     //header:
     resultString = resultString % startRow % startHeader % spacer % "   name   " % spacer % endHeader % startHeader % spacer % "   fit-value   " % spacer % endHeader % startHeader % spacer % "   start-value   " % spacer % endHeader % startHeader % spacer %  "   lower-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   upper-limit  \n reached? " % spacer % endHeader % startHeader % spacer %  "   fixed?   " % spacer % endHeader % finishRow;
 
-    for ( int i = 0 ; i < fitSet->getDeviceResolutionParamPtr()->getSize() ; i += 3 )
-    {
+    for ( int i = 0 ; i < fitSet->getDeviceResolutionParamPtr()->getSize() ; i += 3 ) {
         const QString nameAndAliasSigma("<nobr><b>" % spacer % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getAlias()) % "</b> (" % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getName()) % ")" % spacer %"</nobr>");
         const QString nameAndAliasMu("<nobr><b>"  % spacer % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+1)->getAlias()) % "</b> (" % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+1)->getName()) % ")" % spacer % "</nobr>");
         const QString nameAndAliasIGauss("<nobr><b>"  % spacer % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getAlias()) % "</b> (" % QString(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getName()) % ")" % spacer % "</nobr>");
 
         const QString sigma("<nobr><b>" % spacer % "( " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getFitValueError(), 'f', 4) % " )</b> ps" % spacer % "</nobr>");
         const QString mu("<nobr><b>" % spacer % "( " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+1)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+1)->getFitValueError(), 'f', 4) % " )</b> ps" % spacer % "</nobr>");
-        const QString IGauss("<nobr><b>" % spacer % "( " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValueError(), 'f', 4) % " )</b>" % spacer % "</nobr>");
+        const QString IGauss("<nobr><b>" % spacer % alertHtml % "( " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValue(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValueError(), 'f', 4) % " )</b>" % endHtml % spacer % "</nobr>");
 
         const QString sigmaStart("<nobr>" % spacer % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getStartValue(), 'f', 4) % " ps" % spacer % "</nobr>");
         const QString muStart("<nobr>" % spacer % QString::number(fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+1)->getStartValue(), 'f', 4) % " ps" % spacer % "</nobr>");
@@ -1280,7 +1406,6 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     resultString = resultString % tableBorderEnd;
 
     PALSResult *result = new PALSResult(fitSet->getResultHistoriePtr());
-    DUNUSED_PARAM(result);
 
     result->setResultText(resultString);
 }

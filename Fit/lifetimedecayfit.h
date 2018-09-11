@@ -38,16 +38,15 @@
 #include "mpfit.h"
 
 //#define __FITPARAM_DEBUG
+#define __FITQUEUE_DEBUG
 
 //additional error-enums for the mpfit.h
 #define MP_ERR_NULLPTR_DATASTRUCTURE (-60) /*PALSDataStructure = nullptr;*/
 #define MP_ERR_NULLPTR_FITSET_DATASET (-61) /*PALSFitSet || PALSDataSet = nullptr;*/
 #define MP_ERR_NO_DATA (-62) /*no data to fit*/
 
-typedef enum {
-    no_Weighting = 0,
-    yvariance_Weighting = 1,
-    yerror_Weighting = 2
+typedef enum : int {
+    yerror_Weighting = 1 /* assumption: Poisson noise */
 } residualWeighting;
 
 typedef struct {
@@ -70,11 +69,19 @@ typedef struct {
 
   int countOfDeviceResolutionParams;
 
+  double chiSquareOrig;
+
   int weighting;
+
+  int mpfitRuns;
+
+  int niter[20];
+  double chiSquareStart[20];
+  double chiSquareFinal[20];
+
 } values;
 
-double weightedResidual(double y , double yi , double erryi , int weightingCode);
-int lifeTimeDecaySum(int dataCnt, int ltParam, double *ltFitParamArray, double *dy, double **dvec, void *vars);
+int multiExpDecay(int dataCnt, int ltParam, double *ltFitParamArray, double *dy, double **dvec, void *vars);
 
 class LifeTimeDecayFitEngine : public QObject
 {
@@ -91,7 +98,7 @@ public:
 
 private:
     void updateDataStructureFromResult(PALSDataStructure *dataStructure, mp_result *result, values *v, double *params);
-    void createResultString(PALSDataStructure *dataStructure);
+    void createResultString(PALSDataStructure *dataStructure, values *v);
 
 signals:
     void finished();

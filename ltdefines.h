@@ -30,8 +30,8 @@
 #define LTDEFINES
 
 #define PROJECT_EXTENSION   QString(".dquicklt")
-#define VERSION_STRING_AND_PROGRAM_NAME QString("DQuickLTFit v3.02")
-#define VERSION_RELEASE_DATE QString("17.04.2018")
+#define VERSION_STRING_AND_PROGRAM_NAME QString("DQuickLTFit v4.0")
+#define VERSION_RELEASE_DATE QString("11.09.2018")
 
 #endif // LTDEFINES
 

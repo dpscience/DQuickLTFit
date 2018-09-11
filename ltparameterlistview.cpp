@@ -126,8 +126,6 @@ ParameterListView::ParameterListView(QWidget *parent) :
     connect(ui->spinBox_backgroundChannel, SIGNAL(valueChanged(int)), this, SLOT(saveBackgroundChannelRanges(int)));
     connect(ui->checkBox_FirstChannelBkgrd, SIGNAL(clicked()), this, SLOT(setUsingFirstChannelsForBkgrdCalc()));
 
-    connect(ui->checkBox_usingYVar, SIGNAL(clicked(bool)), this, SLOT(setUsingYVarianceForFitting(bool)));
-
     ui->pushButtonAdd_Sample->setToolTip("Add Component...");
     ui->pushButtonAdd_Source->setToolTip("Add Component...");
     ui->pushButtonAdd_Device->setToolTip("Add Component...");
@@ -152,9 +150,6 @@ ParameterListView::ParameterListView(QWidget *parent) :
     ui->labelLstChnOfROI->setFont(WINDOWS_FONT(9));
     ui->labelMaxIterations->setFont(WINDOWS_FONT(9));
     ui->checkBox_FirstChannelBkgrd->setFont(WINDOWS_FONT(9));
-    ui->label->setFont(WINDOWS_FONT(9));
-    ui->label_2->setFont(WINDOWS_FONT(9));
-    ui->label_3->setFont(WINDOWS_FONT(9));
 
     ui->groupBox->setFont(WINDOWS_FONT(11));
     ui->groupBox_2->setFont(WINDOWS_FONT(11));
@@ -248,10 +243,6 @@ void ParameterListView::updateParamterList()
     connect(ui->spinBox_iterations, SIGNAL(valueChanged(int)), this, SLOT(updateIterations(int)));
     connect(ui->doubleSpinBox_background, SIGNAL(valueChanged(double)), this, SLOT(updateBackground(double)));
     connect(ui->widget, SIGNAL(rangeChanged(double, double)), this, SLOT(updateChannelRange(double, double)));
-
-    disconnect(ui->checkBox_usingYVar, SIGNAL(clicked(bool)), this, SLOT(setUsingYVarianceForFitting(bool)));
-    ui->checkBox_usingYVar->setChecked(m_fitSet->usingYVariance());
-    connect(ui->checkBox_usingYVar, SIGNAL(clicked(bool)), this, SLOT(setUsingYVarianceForFitting(bool)));
 
     emit dataChanged();
 }
@@ -401,6 +392,11 @@ void ParameterListView::initializeDeviceTableWidget()
             item_I->setBackgroundColor(/*Qt::lightGray*/QColor(102, 134, 145));
         }
     }
+}
+
+QCheckBox *ParameterListView::fixedBackgroundCheckBox() const
+{
+    return ui->checkBox_backgroundFixed;
 }
 
 void ParameterListView::updateChannelResolution(double value)
@@ -1011,16 +1007,6 @@ void ParameterListView::setBackgroundChannelRange(int range)
 void ParameterListView::setBackgroundCalculationUsingFirstChannels(bool first)
 {
     ui->checkBox_FirstChannelBkgrd->setChecked(first);
-}
-
-void ParameterListView::setUsingYVarianceForFitting(bool usingYVar)
-{
-    DUNUSED_PARAM(usingYVar);
-
-    if ( !m_fitSet )
-        return;
-
-    m_fitSet->setUsingYVariance(ui->checkBox_usingYVar->isChecked()?true:false);
 }
 
 void PALSSourceTableWidgetItemCollector::updateValue(int row, int column)
