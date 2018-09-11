@@ -922,7 +922,7 @@ void DFastLTFitDlg::disablePDFExport()
 
 void DFastLTFitDlg::showAbout()
 {
-    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>(C) Copyright 2016-2018 by Danny Petschke.<br>All rights reserved.<br><br>";
+    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>" % COPYRIGHT_NOTICE % "<br><br>";
     const QString contact = "contact: <a href=\"danny.petschke@uni-wuerzburg.de\">danny.petschke@uni-wuerzburg.de</a><br><br>";
 
     const QString license = "<nobr>Fit-algorithm provided by: <br>MPFIT: A MINPACK-1 Least Squares Fitting Library in C</nobr><br><br>";
