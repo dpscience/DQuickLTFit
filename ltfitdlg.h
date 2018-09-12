@@ -71,6 +71,8 @@ protected:
     virtual void closeEvent(QCloseEvent *event);
 
 public slots:
+    void changeFixedBackground(bool fixed);
+
     void openProject();
     void saveProject();
     void saveProjectAs();

@@ -102,6 +102,8 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     connect(ui->widget, SIGNAL(fitRangeChanged(int,int)), m_plotWindow, SLOT(setFitRange(int,int)));
     connect(ui->widget, SIGNAL(fitRangeChanged(int,int)), SLOT(instantPreview()));
 
+    connect(ui->widget->fixedBackgroundCheckBox(), SIGNAL(clicked(bool)), this, SLOT(changeFixedBackground(bool)));
+
     connect(ui->actionPlot_Window, SIGNAL(triggered(bool)), this, SLOT(changePlotWindowVisibility(bool)));
     connect(m_plotWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(changePlotWindowVisibilityFromOutside(bool)));
 
@@ -274,6 +276,11 @@ void DFastLTFitDlg::closeEvent(QCloseEvent *event)
     QMainWindow::closeEvent(event);
 }
 
+void DFastLTFitDlg::changeFixedBackground(bool fixed)
+{
+    PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->setAsFixed(fixed);
+}
+
 void DFastLTFitDlg::openProject()
 {
     const QString fileName = QFileDialog::getOpenFileName(this, tr("Open a project"),
@@ -362,6 +369,10 @@ void DFastLTFitDlg::openProjectFromPath(const QString& fileName)
 
         if ( !PALSProjectManager::sharedInstance()->getDataStructure()->getDataSetPtr()->getFitData().isEmpty() )
             m_resultWindow->addResultTabsFromHistory();
+
+        disconnect(ui->widget->fixedBackgroundCheckBox(), SIGNAL(clicked(bool)), this, SLOT(changeFixedBackground(bool)));
+            ui->widget->fixedBackgroundCheckBox()->setChecked(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->isFixed());
+        connect(ui->widget->fixedBackgroundCheckBox(), SIGNAL(clicked(bool)), this, SLOT(changeFixedBackground(bool)));
     }
 
     updateLastProjectActionList();
@@ -432,6 +443,8 @@ void DFastLTFitDlg::newProject()
 {
     PALSProjectManager::sharedInstance()->createEmptyProject();
     PALSProjectManager::sharedInstance()->setFileName("");
+
+    PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getBackgroundParamPtr()->getParameter()->setAsFixed(ui->widget->fixedBackgroundCheckBox()->isChecked());
 
     m_plotWindow->clearAll();
     m_plotWindow->setXRange(PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStartChannel(), PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->getStopChannel());
@@ -909,7 +922,7 @@ void DFastLTFitDlg::disablePDFExport()
 
 void DFastLTFitDlg::showAbout()
 {
-    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>(C) Copyright 2016-2018 by Danny Petschke.<br>All rights reserved.<br><br>";
+    const QString text = VERSION_STRING_AND_PROGRAM_NAME % " (" % VERSION_RELEASE_DATE % ") <br><br>" % COPYRIGHT_NOTICE % "<br><br>";
     const QString contact = "contact: <a href=\"danny.petschke@uni-wuerzburg.de\">danny.petschke@uni-wuerzburg.de</a><br><br>";
 
     const QString license = "<nobr>Fit-algorithm provided by: <br>MPFIT: A MINPACK-1 Least Squares Fitting Library in C</nobr><br><br>";
@@ -933,14 +946,14 @@ void DFastLTFitDlg::instantPreview()
     double startChannel = dataStructure->getFitSetPtr()->getStartChannel();
     double stopChannel = dataStructure->getFitSetPtr()->getStopChannel();
     double peakChannel = 0;
-    double countsInPeak = -INT_MAX;
+    double countsInPeak = -(double)INT_MAX;
 
      int startChannelIndex = 0;
      int stopChannelIndex = 0;
      int peakChannelIndex = 0;
 
      int channelCnt = 0;
-     int dataCntInRange = stopChannel-startChannel+1;
+     int dataCntInRange = (stopChannel-startChannel+1);
 
      double *x = new double[dataCntInRange];
      double *y = new double[dataCntInRange];
@@ -950,24 +963,23 @@ void DFastLTFitDlg::instantPreview()
      int integralCounts = 0;
      int tZero = 0;
 
-     for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() )
-     {
-         if ( p.x() >= startChannel && p.x() <= stopChannel )
-         {
+     for ( QPointF p : dataStructure->getDataSetPtr()->getLifeTimeData() ) {
+         if ( ((int)p.x()) >= ((int)startChannel) && ((int)p.x()) <= ((int)stopChannel) ) {
              x[inRangeCnt] = p.x();
              y[inRangeCnt] = p.y();
-             ey[inRangeCnt] = 0;
+
+             /* calculate error (weighting) (statistical weighting) */
+             ey[inRangeCnt] = 1.0/sqrt(p.y() + 1.0); //prevent zero division
 
              integralCounts += (int)p.y();
 
-             if ( p.x() == startChannel )
+             if ( ((int)p.x()) == ((int)startChannel) )
                  startChannelIndex = channelCnt;
 
-             if ( p.x() == stopChannel )
+             if ( ((int)p.x()) == ((int)stopChannel) )
                  stopChannelIndex = channelCnt;
 
-             if ( p.y() > countsInPeak )
-             {
+             if ( ((int)p.y()) > ((int)countsInPeak) ) {
                  countsInPeak = p.y();
                  peakChannel = p.x();
                  peakChannelIndex = channelCnt;
@@ -982,12 +994,10 @@ void DFastLTFitDlg::instantPreview()
 
      tZero -= startChannel;
 
-    ///Parameter initial conditions:
-    double *params = new double[paramCnt]; //source->sample->gaussian->bkgrd
+    double *params = new double[paramCnt]; /* following order: source => sample => gaussian => bkgrd */
 
     int i = 0;
-    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = 0 ; i < dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getSourceParamPtr()->getParameterAt(i);
         params[i] = fitParam->getStartValue()/channelResolution; //tau
 
@@ -996,8 +1006,7 @@ void DFastLTFitDlg::instantPreview()
     }
 
     int cnt = 0;
-    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i+=2 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getParameterAt(cnt);
         params[i] = fitParam->getStartValue()/channelResolution; //tau
 
@@ -1010,8 +1019,7 @@ void DFastLTFitDlg::instantPreview()
     }
 
     int cntGaussian= 0;
-    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 )
-    {
+    for ( i = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() ; i < dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize() ; i+=3 ) {
         const PALSFitParameter *fitParam = dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getParameterAt(cntGaussian);
         params[i] = fitParam->getStartValue()/channelResolution; //sigma
 
@@ -1030,7 +1038,7 @@ void DFastLTFitDlg::instantPreview()
 
     const PALSFitParameter *bkgrd = dataStructure->getFitSetPtr()->getBackgroundParamPtr()->getParameter();
 
-    const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();//+2;
+    const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();
 
     params[bkgrdIndex] = bkgrd->getStartValue();
 
@@ -1041,49 +1049,53 @@ void DFastLTFitDlg::instantPreview()
 
     QList<QPointF> fitPlotSet;
 
-    double residuum = 0;
-    for ( int i = 0 ; i < dataCntInRange-1 ; ++ i )
-    {
-        double f = 0;
+    double residuals = 0.0;
+    const int reducedCntInRange = (dataCntInRange - 1);
+    const int reducedDevCount = (paramCnt - cntGaussian - 1);
+    const int reducedParamCount = (paramCnt - 1);
+    const double integralCountsWithoutBkgrd = (double)integralCounts-(double)dataCntInRange*bkgrdVal;
+
+    for ( int i = 0 ; i < reducedCntInRange ; ++ i ) {
+        double f = 0.0;
 
         x[i] -= startChannel;
         const double x_plus_1 = x[i+1]-startChannel;
 
-        for ( int device = paramCnt - cntGaussian - 1 ; device < paramCnt - 1 ; device += 3 )
-        {
-            const double gaussianSigmaVal = params[device]/(2*sqrt(log(2)));
+        for ( int device = reducedDevCount ; device < reducedParamCount ; device += 3 ) {
+            const double gaussianSigmaVal = params[device]/(2*sqrt(log(2))); /* transform FWHM to 1-sigma uncertainty */
             const double gaussianMuVal = params[device+1];
-            const double gaussianIntensity = params[device+2];
 
-            for ( int param = 0 ; param <  paramCnt - cntGaussian - 1/*3*/ ; param += 2 ) // first param[0] = tau; second param[1] = Intensity
-            {
-                //Eldrup-Formula:
+            const double gaussianIntensity = params[device+2]; /* IRF contribution */
+
+            double valF = 0.0;
+
+            /* Kirkegaard and Eldrup (1972) */
+            for ( int param = 0 ; param <  reducedDevCount ; param += 2 ) { /* 1st param[0] = tau; 2nd param[1] = Intensity */
                 const double yji = exp(-(x[i]-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x[i]-gaussianMuVal)/gaussianSigmaVal));
                 const double yji_plus_1 = exp(-(x_plus_1-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x_plus_1-gaussianMuVal)/gaussianSigmaVal));
 
-                f += 0.5*params[param+1]/**params[param]*/*(yji-yji_plus_1-erf((x[i]-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+                valF += 0.5*params[param+1]*(yji-yji_plus_1-erf((x[i]-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
             }
 
-            f *= gaussianIntensity;
+            valF *= gaussianIntensity;
+            f += valF;
         }
 
         x[i] += startChannel;
 
-        f *= integralCounts-dataCntInRange*bkgrdVal;;
-        f += bkgrdVal;
+        f *= integralCountsWithoutBkgrd;
+        f += (double)bkgrdVal;
 
-        if ( !qFuzzyCompare(y[i], 0.0) )
-            residuum += (f-y[i])*(f-y[i])/y[i];
+        residuals += (y[i]-f)*(y[i]-f)*ey[i]*ey[i];
 
         fitPlotSet.append(QPointF(x[i], f));
     }
 
+    /*approximated reduced chi-square (number of free parameters is not taken into account) */
     if ( dataCntInRange == 0 )
-        residuum = -1;
+        residuals = -1;
     else
-        residuum /= ((double)dataCntInRange); //chi-square
-
-    PALSProjectManager::sharedInstance()->getDataStructure()->getFitSetPtr()->setChiSquareOnStart(residuum);
+        residuals /= ((double)dataCntInRange);
 
     m_plotWindow->clearPreviewData();
     m_plotWindow->addPreviewData(fitPlotSet);
@@ -1091,15 +1103,13 @@ void DFastLTFitDlg::instantPreview()
 
     m_plotWindow->setFitRange(startChannel, stopChannel);
 
-    if ( residuum == -1 )
-    {
+    if ( residuals == -1 ) {
         m_integralCountInROI->setText("");
         m_chiSquareLabel->setText("");
     }
-    else
-    {
+    else {
         m_integralCountInROI->setText("estimated t<sub>0</sub>: <b>" % QVariant(tZero*channelResolution).toString() % "ps</b> Integral Cnts. ROI [" % QVariant(startChannel).toString() % ":" % QVariant(stopChannel).toString() % "]: <b>" % QVariant(integralCounts).toString() % "</b>");
-        m_chiSquareLabel->setText("&#967;<sup>2</sup> ( @ start ): <b>" % QString::number(residuum, 'g', 3) % "</b>"); //chi-square
+        m_chiSquareLabel->setText("approx. &#967;<sub>&#957;</sub><sup>2</sup> ( @ start ): <b>" % QString::number(residuals, 'g', 3) % "</b>"); //appr. reduced chi-square
     }
 
     delete [] x;

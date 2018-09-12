@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     splash.setFont(QFont("Arial", 12));
 #endif
 
-    splash.showMessage((QString(QString("<b>") % VERSION_STRING_AND_PROGRAM_NAME % QString(" (") % VERSION_RELEASE_DATE % QString(") </b><br>(C) Copyright 2016-2018 by Danny Petschke. All rights reserved."))), Qt::AlignLeft | Qt::AlignTop, Qt::darkGray);
+    splash.showMessage((QString(QString("<b>") % VERSION_STRING_AND_PROGRAM_NAME % QString(" (") % VERSION_RELEASE_DATE % QString(") </b><br>") % COPYRIGHT_NOTICE)), Qt::AlignLeft | Qt::AlignTop, Qt::darkGray);
 
     const QTime dieTime= QTime::currentTime().addSecs(3);
     while ( QTime::currentTime() < dieTime )

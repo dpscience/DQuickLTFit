@@ -182,8 +182,6 @@ class PALSFitSet
     DSimpleXMLNode *m_maxIterationsNode;
     DSimpleXMLNode *m_neededIterationsNode;
 
-    DSimpleXMLNode *m_usingYVarianceNode;
-
     DSimpleXMLNode *m_chiSquareOnStart;
     DSimpleXMLNode *m_chiSquareAfterFit;
 
@@ -203,6 +201,7 @@ class PALSFitSet
 
     DSimpleXMLNode *m_peakToBackgroundRatioNode;
     DSimpleXMLNode *m_sumOfIntensitiesNode;
+    DSimpleXMLNode *m_sumErrorOfIntensitiesNode;
 
     DSimpleXMLNode *m_dataPlotImageNode;
     DSimpleXMLNode *m_residualPlotImageNode;
@@ -238,7 +237,6 @@ public:
 SETTINGS_WRITE
     void setMaximumIterations(unsigned int iterations);
     void setNeededIterations(unsigned int iterations);
-    void setUsingYVariance(bool usingYVar);
     void setChiSquareOnStart(double value);
     void setChiSquareAfterFit(double value);
     void setChannelResolution(double resolution);
@@ -252,6 +250,7 @@ SETTINGS_WRITE
     void setTimeStampOfLastFitResult(const QString& timeStamp);
     void setPeakToBackgroundRatio(double ratio);
     void setSumOfIntensities(double sum);
+    void setErrorSumOfIntensities(double sum);
     void setDataPlotImage(const QImage& image);
     void setResidualPlotImage(const QImage& image);
     void setSpectralCentroid(double center);
@@ -260,10 +259,8 @@ SETTINGS_WRITE
 SETTINGS_READ
     unsigned int getMaximumIterations() const;
     unsigned int getNeededIterations() const;
-    bool usingYVariance() const;
     double getChiSquareOnStart() const;
     double getChiSquareAfterFit() const;
-    bool getUsingYVariance() const;
     double getChannelResolution() const;
     int getStartChannel() const;
     int getStopChannel() const;
@@ -275,6 +272,7 @@ SETTINGS_READ
     QString getTimeStampOfLastFitResult() const;
     double getPeakToBackgroundRation() const;
     double getSumOfIntensities() const;
+    double getErrorSumOfIntensities() const;
     QImage getDataPlotImage() const;
     QImage getResidualPlotImage() const;
     double getSpectralCentroid() const;

@@ -3,9 +3,11 @@
 Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 <b>DQuickLTFit</b> - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm<br>
 
-![DQuickLTFit](/TestData/Software.png)
+#### We recommend the use of DQuickLTFit v4.0 and higher since this is the first stable version.
 
-# How to cite this Software?
+<br>![DQuickLTFit](/TestData/Software.png)
+
+## How to cite this Software?
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
 
@@ -20,10 +22,13 @@ DQuickLTFit v3.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345
 DQuickLTFit v2.06:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168286.svg)](https://doi.org/10.5281/zenodo.1168286)<br>
 
 # About
-<b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and implements the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
+<b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and has implemented the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
 MPFIT was ported from [MINPACK-1](http://www.netlib.org/minpack/) library [2,3].<br><br>
+The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).<br>
 
 # License (GNU General Public License)
+Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
+
 <p align="justify">This program is free software: you can redistribute it and/or modify<br>
 it under the terms of the GNU General Public License as published by<br>
 the Free Software Foundation, either version 3 of the License, or<br>

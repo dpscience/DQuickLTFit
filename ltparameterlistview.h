@@ -68,6 +68,8 @@ private:
     void initializeSampleTableWidget();
     void initializeDeviceTableWidget();
 
+    QCheckBox *fixedBackgroundCheckBox() const;
+
 private slots:
     void updateChannelResolution(double value);
     void updateIterations(int iter);
@@ -77,7 +79,6 @@ private slots:
     void updateBackgroundValue();
     void saveBackgroundChannelRanges(int channels);
     void setUsingFirstChannelsForBkgrdCalc();
-
 
 public slots:
     void addSourceComponent();
@@ -99,8 +100,6 @@ public slots:
 
     void setBackgroundChannelRange(int range);
     void setBackgroundCalculationUsingFirstChannels(bool first);
-
-    void setUsingYVarianceForFitting(bool usingYVar);
 
 signals:
     void dataChanged();
