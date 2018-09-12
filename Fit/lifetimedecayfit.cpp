@@ -615,15 +615,13 @@ void LifeTimeDecayFitEngine::fit()
     /* Gaussian-sigma, Gaussian-mu & Background: */
     PALSFitParameter *bkgrd = dataStructure->getFitSetPtr()->getBackgroundParamPtr()->getParameter();
 
-    /* background = const. */
+    /* background */
     bkgrd->setLowerBoundingEnabled(false);
     bkgrd->setUpperBoundingEnabled(false);
 
     const int bkgrdIndex = dataStructure->getFitSetPtr()->getLifeTimeParamPtr()->getSize()+dataStructure->getFitSetPtr()->getSourceParamPtr()->getSize() + dataStructure->getFitSetPtr()->getDeviceResolutionParamPtr()->getSize();//+2;
 
     params[bkgrdIndex] = bkgrd->getStartValue();
-
-    //v.peakToBackgroundRatio = (double)(countsInPeak-bkgrd->getStartValue())/bkgrd->getStartValue();
 
 #ifdef __FITPARAM_DEBUG
         qDebug() << "";
@@ -716,7 +714,7 @@ void LifeTimeDecayFitEngine::fit()
         residuals += (y[i]-f)*(y[i]-f)*ey[i]*ey[i];
     }
 
-    v.chiSquareOrig = residuals;
+    v.chiSquareOrig = residuals; /* initial residuals/chi-square */
 
 
     /* returned parameter uncertainties (1-sigma): */
@@ -735,9 +733,9 @@ void LifeTimeDecayFitEngine::fit()
     config.maxiter = dataStructure->getFitSetPtr()->getMaximumIterations();
 
 
-    /* auto optimize chi-square*/
-    double currentChiSquare = (double)(INT_MAX - 1);
-    double chiSquareMem = (currentChiSquare + 1);
+    /* auto optimize chi-square : fit-values turn to start-values until chi-square convergence */
+    double currentChiSquare = v.chiSquareOrig;
+    double chiSquareMem = v.chiSquareOrig;
 
     int fitRun = 0;
 #ifdef __FITQUEUE_DEBUG
@@ -745,7 +743,7 @@ void LifeTimeDecayFitEngine::fit()
 #endif
     v.chiSquareStart[fitRun] = v.chiSquareOrig;
 
-    while (chiSquareMem > currentChiSquare) {
+    do {
         /* run mpfit least-square minimization */
         const int stat = mpfit(multiExpDecay,
                                   dataCntInRange,
@@ -756,10 +754,52 @@ void LifeTimeDecayFitEngine::fit()
                                   (void*) &v,
                                   &result);
 
-        currentChiSquare = result.bestnorm;
-        chiSquareMem = result.orignorm;
+        /* calculate the correct residuals and finally the correct reduced chi-square */
+        const int reducedCntInRange = (dataCntInRange - 2);
+        const int reducedDevCount = (paramCnt - cntGaussian - 1);
+        const int reducedParamCount = (paramCnt - 1);
+        const double integralCountsWithoutBkgrd = (double)v.integralCountsInROI-(double)(dataCntInRange-1)*params[bkgrdIndex];
 
-        v.chiSquareFinal[fitRun] = result.bestnorm;
+        double chiResiduals = 0.0;
+
+        for ( int i = 0 ; i < reducedCntInRange ; ++ i ) {
+            double f = 0.0;
+
+            x[i] -= startChannel;
+            const double x_plus_1 = x[i+1]-startChannel;
+
+            for ( int device = reducedDevCount ; device < reducedParamCount ; device += 3 ) {
+                const double gaussianSigmaVal = params[device]/(2*sqrt(log(2))); /* transform FWHM to 1-sigma uncertainty */
+                const double gaussianMuVal = params[device+1];
+
+                const double gaussianIntensity = params[device+2]; /* IRF contribution */
+
+                double valF = 0.0;
+
+                /* Kirkegaard and Eldrup (1972) */
+                for ( int param = 0 ; param <  reducedDevCount ; param += 2 ) { /* 1st param[0] = tau; 2nd param[1] = Intensity */
+                    const double yji = exp(-(x[i]-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x[i]-gaussianMuVal)/gaussianSigmaVal));
+                    const double yji_plus_1 = exp(-(x_plus_1-gaussianMuVal-(gaussianSigmaVal*gaussianSigmaVal)/(4*params[param]))/params[param])*(1-erf((0.5*gaussianSigmaVal/params[param])-(x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+
+                    valF += 0.5*params[param+1]*(yji-yji_plus_1-erf((x[i]-gaussianMuVal)/gaussianSigmaVal)+erf((x_plus_1-gaussianMuVal)/gaussianSigmaVal));
+                }
+
+                valF *= gaussianIntensity;
+                f += valF;
+            }
+
+            x[i] += startChannel;
+
+            f *= integralCountsWithoutBkgrd;
+            f += params[bkgrdIndex];
+
+            chiResiduals += (y[i]-f)*(y[i]-f)*ey[i]*ey[i];
+        }
+
+        chiSquareMem = v.chiSquareStart[fitRun];
+        currentChiSquare = chiResiduals;
+
+        v.chiSquareFinal[fitRun] = currentChiSquare;
         v.chiSquareStart[fitRun+1] = v.chiSquareFinal[fitRun];
 
         v.niter[fitRun] = result.niter;
@@ -793,6 +833,7 @@ void LifeTimeDecayFitEngine::fit()
             qDebug() << "";
 #endif
     }
+    while (chiSquareMem - currentChiSquare > 1E-5);
 #ifdef __FITQUEUE_DEBUG
             qDebug() << "******* mpfit finished *********";
 #endif
@@ -1031,6 +1072,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     const QString notifyHtml = "<font color=\"Lime\">";
     const QString infoHtml = "<font color=\"Aqua\">";
     const QString info2Html = "<font color=\"blue\">";
+    const QString okHtml = "<font color=\"green\">";
     const QString endHtml = "</font>";
 
     const QString projectName("<nobr><b>Project:</b></nobr>");
@@ -1047,7 +1089,7 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
         fitFinishCodeVal = QString("<nobr><b>" % alertHtml % fitSet->getFitFinishCode() % " </b>" % endHtml % "[" % fitSet->getTimeStampOfLastFitResult() % "]</nobr>");
 
     const QString chiSquare("<nobr><b>&#935;<sub>&#957;</sub><sup>2</sup>:</b></nobr>");
-    const QString chiSquareVal("<nobr><b>" % QString::number(fitSet->getChiSquareAfterFit(), 'g', 4) % "</b> (" % QString::number(fitSet->getChiSquareOnStart(), 'g', 4) % " @ start)" % "</nobr>");
+    const QString chiSquareVal("<nobr><b>" % okHtml % QString::number(fitSet->getChiSquareAfterFit(), 'g', 4) % endHtml % "</b> (" % QString::number(fitSet->getChiSquareOnStart(), 'g', 4) % " @ start)" % "</nobr>");
 
     const QString fitWeighting("<nobr><b>Fit-Weighting:</b></nobr>");
     const QString fitWeightingVal("<nobr><b>" % QString("sqrt[counts]") % "</b></nobr>");
@@ -1102,13 +1144,11 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     const QString sumOfIRFIntensitiesVal = QString("<nobr><b>" % alertHtml % "( " % QString::number(sumIRF, 'f', 4) % " &plusmn; " % QString::number(sumIRFError, 'f', 4) % " )" % endHtml % "</b></nobr>");
 
-
     const QString tauAverage("<nobr><b>&#964;<sub>average</sub>:</b></nobr>");
     const QString tauAverageVal("<nobr><b>( " % QString::number(fitSet->getAverageLifeTime(), 'f', 4) % " &plusmn; " % QString::number(fitSet->getAverageLifeTimeError(), 'f', 4) % " ) </b>ps</nobr>");
 
 
     QString resultString = "";
-
     resultString = resultString % tableStart;
 
     /*project-name:*/   resultString = resultString % startRow % startContent % projectName % finishContent % startContent % PALSProjectManager::sharedInstance()->getFileName() % finishContent % finishRow;
@@ -1138,7 +1178,15 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
             iterString = QString("<nobr><b>" % spacer % QVariant(v->niter[i]).toString() % "/" % QVariant((int)fitSet->getMaximumIterations()).toString() % spacer % "</b></nobr>");
         }
 
-        const QString finalChiSqString = QString("<nobr><b>" % spacer % QString::number(v->chiSquareFinal[i], 'f', 4) % spacer % "</b></nobr>");
+        QString finalChiSqString = "";
+
+        if (i == v->mpfitRuns - 1) {
+            finalChiSqString = QString("<nobr><b>" % spacer % okHtml % QString::number(v->chiSquareFinal[i], 'f', 4) % endHtml % spacer % "</b></nobr>");
+        }
+        else {
+            finalChiSqString = QString("<nobr><b>" % spacer % QString::number(v->chiSquareFinal[i], 'f', 4) % spacer % "</b></nobr>");
+        }
+
         const QString startChiSqString = QString("<nobr><b>" % spacer % QString::number(v->chiSquareStart[i], 'f', 4) % spacer % "</b></nobr>");
 
         const QString startContentAligned = startContent % alignCenterStart;
