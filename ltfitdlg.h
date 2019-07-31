@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2018 Danny Petschke
+**  Copyright (C) 2016-2019 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ class DFastLTFitDlg : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit DFastLTFitDlg(QWidget *parent = 0);
+    explicit DFastLTFitDlg(const QString projectPath = "", QWidget *parent = nullptr);
     virtual ~DFastLTFitDlg();
 
 protected:
@@ -99,6 +99,8 @@ public slots:
     void calculateBackground();
 
     void enableGUI(bool enable);
+
+    void printToFile(const QString& fileName, const QList<QPointF>& vec);
 
 private slots:
     void fitHasFinished();

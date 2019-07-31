@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2018 Danny Petschke
+**  Copyright (C) 2016-2019 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 #define WINDOWS_FONT(__pointSize__)  QFont("Arial", __pointSize__)
 #endif
 
-DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
+DFastLTFitDlg::DFastLTFitDlg(const QString projectPath, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::DFastLTFitDlg),
     m_onStart(false)
@@ -177,6 +177,7 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     m_calculatorWindow->setTextFont(QFont("Helvetica", 12));
 #endif
 
+    //if ( projectPath.isEmpty() )
     newProject();
 
     m_onStart = true;
@@ -190,6 +191,9 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
     ui->widget->setBackgroundCalculationUsingFirstChannels(PALSProjectSettingsManager::sharedInstance()->getBackgroundCalculationFromFirstChannels());
 
     m_plotWindow->setYRangeData(1, 10000);
+
+    if ( !projectPath.isEmpty() )
+        openProjectFromPath(projectPath);
 
     if ( PALSProjectSettingsManager::sharedInstance()->getPlotWindowWasShownOnExit() )
         m_plotWindow->showMaximized();
@@ -207,7 +211,7 @@ DFastLTFitDlg::DFastLTFitDlg(QWidget *parent) :
         m_resultWindow->hide();
     }
 
-    this->show();
+    show();
 }
 
 DFastLTFitDlg::~DFastLTFitDlg()
@@ -1206,5 +1210,26 @@ void DFastLTFitDlg::enableGUI(bool enable)
         ui->label->setText("Fit is Running");
         ui->label_2->setText("!");
         ui->pushButtonRunFit->setLiteralSVG(":/localImages/Images/fit");
+    }
+}
+
+void DFastLTFitDlg::printToFile(const QString &fileName, const QList<QPointF> &vec)
+{
+    QFile file(fileName + ".in");
+
+    if (file.open(QIODevice::ReadWrite | QIODevice::Append)) {
+        QTextStream stream(&file);
+        stream << fileName + "\n\r";
+        for (int i = 0 ; i < vec.size() ; i += 8) {
+            QString text("       " + QVariant(i).toString() + "        \n\r");
+
+            for (int u = 0 ; u < 8 ; ++ u) {
+                text.append(QVariant(vec.at((i) + u).y()).toString() + "        \n\r");
+            }
+
+            stream << text << endl;
+        }
+
+        file.close();
     }
 }

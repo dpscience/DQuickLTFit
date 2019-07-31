@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2018 Danny Petschke
+**  Copyright (C) 2016-2019 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,9 @@ int main(int argc, char *argv[])
     QSharedMemory sharedMemory;
     sharedMemory.setKey("DQuickLTFit0123456789qwetzuioasdfghjklerfgbnpokjn,.-234567890weuhcq8934cn43q8DQuickLTFit");
 
+    QApplication a(argc, argv);
+    a.setApplicationName("DQuickLTFit");
+
     if ( !sharedMemory.create(1) ) {
         DMSGBOX("An instance of DQuickLTFit is already running!");
 
@@ -47,8 +50,13 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    QApplication a(argc, argv);
-    a.setApplicationName("DQuickLTFit");
+    QString projectPath = "";
+    if (argc >= 2) {
+        projectPath = QString::fromUtf8(QByteArray(argv[1]));
+
+        if (!projectPath.contains(PROJECT_EXTENSION))
+            projectPath = "";
+    }
 
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
@@ -66,7 +74,7 @@ int main(int argc, char *argv[])
     while ( QTime::currentTime() < dieTime )
        QCoreApplication::processEvents();
 
-    DFastLTFitDlg w;
+    DFastLTFitDlg w(projectPath);
     w.show();
     splash.finish(&w);
 
