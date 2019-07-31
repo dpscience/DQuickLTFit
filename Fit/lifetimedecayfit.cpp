@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2018 Danny Petschke
+**  Copyright (C) 2016-2019 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -1215,6 +1215,23 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
 
     /*tau average:*/resultString = resultString % startRow % startContent % tauAverage % finishContent % startContent % tauAverageVal % finishContent % finishRow % lineBreak;
 
+    double effectiveFWHMIRF = 0.0;
+    double effectiveFWHMIRFError = 0.0;
+
+    for ( int i = 0 ; i < fitSet->getDeviceResolutionParamPtr()->getSize() ; i += 3 ) {
+        effectiveFWHMIRF += (fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getFitValue()*fitSet->getDeviceResolutionParamPtr()->getParameterAt(i+2)->getFitValue());
+        effectiveFWHMIRFError += (fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getFitValueError()*fitSet->getDeviceResolutionParamPtr()->getParameterAt(i)->getFitValueError());
+    }
+
+    if (!qFuzzyCompare(effectiveFWHMIRFError, 0.0)) {
+        effectiveFWHMIRFError = sqrt(effectiveFWHMIRFError);
+    }
+
+    const QString effectiveFWHM("<nobr><b>effect. FWHM:</b></nobr>");
+    const QString effectiveFWHMVal("<nobr><b>( " % QString::number(effectiveFWHMIRF, 'f', 4) % " &plusmn; " % QString::number(effectiveFWHMIRFError, 'f', 4) % " ) </b>ps</nobr>");
+
+    /*effect. FWHM:*/resultString = resultString % startRow % startContent % effectiveFWHM % finishContent % startContent % effectiveFWHMVal % finishContent % finishRow % lineBreak;
+
     resultString = resultString % tableEnd % lineBreak;
 
 
@@ -1367,7 +1384,6 @@ void LifeTimeDecayFitEngine::createResultString(PALSDataStructure *dataStructure
     resultString = resultString % tableBorderEnd;
     resultString = resultString % lineBreak % lineBreak;
 
-    /*IRF-Components:*/
     resultString = resultString % "<nobr><b><big>" % "IRF (Gaussian)-Components [" % QVariant(fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "/" % QVariant(fitSet->getComponentsCount()+fitSet->getDeviceResolutionParamPtr()->getSize()).toString() % "]</b></big>" % startContent % sumOfIRFIntensities % finishContent % startContent % sumOfIRFIntensitiesVal % finishContent % "</nobr>";
 
     resultString = resultString % tableBorderStart;

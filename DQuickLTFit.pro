@@ -12,7 +12,7 @@ macx {
 QMAKE_MAC_SDK = macosx10.11
 }
 
-TARGET = DQuickLTFit
+TARGET = DQuickLTFit_4_1
 TEMPLATE = app
 
 win32{

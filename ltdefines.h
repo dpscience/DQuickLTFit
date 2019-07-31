@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2018 Danny Petschke
+**  Copyright (C) 2016-2019 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@
 #define LTDEFINES
 
 #define PROJECT_EXTENSION   QString(".dquicklt")
-#define VERSION_STRING_AND_PROGRAM_NAME QString("DQuickLTFit v4.0")
-#define VERSION_RELEASE_DATE QString("11.09.2018")
-#define COPYRIGHT_NOTICE QString("(C) Copyright 2016-2018 by Danny Petschke. All rights reserved.")
+#define VERSION_STRING_AND_PROGRAM_NAME QString("DQuickLTFit v4.1")
+#define VERSION_RELEASE_DATE QString("31.07.2019")
+#define COPYRIGHT_NOTICE QString("(C) Copyright 2016-2019 by Danny Petschke. All rights reserved.")
 
 #endif // LTDEFINES
 

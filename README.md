@@ -1,9 +1,9 @@
 ﻿# DQuickLTFit  <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">   
 
-Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
+Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 <b>DQuickLTFit</b> - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm<br>
 
-#### We recommend the use of DQuickLTFit v4.0 and higher since this is the first stable version.
+#### We recommend the use of DQuickLTFit v4.0 or higher as this is the first stable version.
 
 <br>![DQuickLTFit](/TestData/Software.png)
 
@@ -14,6 +14,7 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This D
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168285.svg)](https://doi.org/10.5281/zenodo.1168285)
 
 ## v4.x
+DQuickLTFit v4.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414142.svg)](https://doi.org/10.5281/zenodo.1414142)<br>
 DQuickLTFit v4.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414142.svg)](https://doi.org/10.5281/zenodo.1414142)<br>
 
 ## v3.x
@@ -30,7 +31,7 @@ MPFIT was ported from [MINPACK-1](http://www.netlib.org/minpack/) library [2,3].
 The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).<br>
 
 # License (GNU General Public License)
-Copyright (c) 2016-2018 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
+Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 
 <p align="justify">This program is free software: you can redistribute it and/or modify<br>
 it under the terms of the GNU General Public License as published by<br>
@@ -43,7 +44,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br><br></p>
 
 For more details see [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
-# Setup
+# Run executable (*.exe)
+The executable (and binary files) can be either downloaded from <b>zenodo platform</b> by following the related DOI (see above) or from the corresponding release.
+
+# Setup from source files
 1. Download [Qt-framework](https://www.qt.io/download) (at least v5.x).
 2. Download and Setup MS Visual Studio Compiler 2013 (or any newer version) .
 3. Compile (x86/x64) and Run the code on your Machine.
@@ -54,7 +58,6 @@ For more details see [GNU General Public License v3](https://www.gnu.org/license
 [1] [C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.](https://arxiv.org/abs/0902.2850)<br>
 [2] [J.J. Moré. in: Springer, Berlin, Heidelberg; 1978: pp. 105–116. doi:10.1007/BFb0067700](https://link.springer.com/chapter/10.1007/BFb0067700).<br>
 [3] [MINPACK-1, Jorge More'](http://www.netlib.org/minpack/)
-
 
 
 
