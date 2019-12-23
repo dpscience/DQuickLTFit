@@ -7,6 +7,13 @@ Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rig
 
 <br>![DQuickLTFit](/TestData/Software.png)
 
+# Quickstart Guide <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25"> 
+
+1. Download the latest software release (<b>DQuickLTFit_v4_1.rar</b>): https://github.com/dpscience/DQuickLTFit/releases
+2. Unzip <b>DQuickLTFit_v4_1.rar</b>.
+3. Download and install the Visual C++ Redistributable Package (x64) if required: https://www.microsoft.com/de-de/download/details.aspx?id=48145
+3. Run the <b>DQuickLTFit</b> executable.
+
 ## How to cite this Software?
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
@@ -44,15 +51,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br><br></p>
 
 For more details see [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
-# Run executable (*.exe)
-The executable (and binary files) can be either downloaded from <b>zenodo platform</b> by following the related DOI (see above) or from the corresponding release.
-
-# Setup from source files
+# Run DQuickLTFit from source files
 1. Download [Qt-framework](https://www.qt.io/download) (at least v5.x).
-2. Download and Setup MS Visual Studio Compiler 2013 (or any newer version) .
-3. Compile (x86/x64) and Run the code on your Machine.
+2. Download and Setup the MS Visual Studio Compiler (at least version 2013).
+3. Compile and Deploy for x64.
 4. Open the example project ([TestData.dquicklt](/TestData/TestData.dquicklt)) in the folder [TestData](/TestData/).
-5. Finished. It should show up the [data](/TestData/TestData_5psPerChannel.dat) and fit(-results) as displayed above.
+5. Finished. DQuickLTFit shows the [data](/TestData/TestData_5psPerChannel.dat) and fit(-results) as displayed above.
 
 # References
 [1] [C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.](https://arxiv.org/abs/0902.2850)<br>
