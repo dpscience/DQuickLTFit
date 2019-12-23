@@ -3,7 +3,7 @@
 Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 <b>DQuickLTFit</b> - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm<br>
 
-#### We recommend the use of DQuickLTFit v4.0 or higher as this is the first stable version.
+#### We recommend using at least DQuickLTFit v4.0 as this is the first stable version.
 
 <br>![DQuickLTFit](/TestData/Software.png)
 
