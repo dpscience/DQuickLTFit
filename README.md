@@ -1,4 +1,4 @@
-﻿# DQuickLTFit  <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">   
+﻿# DQuickLTFit <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">   
 
 Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 <b>DQuickLTFit</b> - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm<br>
@@ -14,7 +14,12 @@ Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rig
 3. Download and install the Visual C++ Redistributable Package (x64) if required: https://www.microsoft.com/de-de/download/details.aspx?id=48145
 3. Run the <b>DQuickLTFit</b> executable.
 
-## How to cite this Software?
+# About <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
+<b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and has implemented the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
+MPFIT was ported from [MINPACK-1](http://www.netlib.org/minpack/) library [2,3].<br><br>
+The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).<br>
+
+## How to cite this Software? <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
 
@@ -32,12 +37,7 @@ DQuickLTFit v3.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345
 ## v2.x
 DQuickLTFit v2.06:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168286.svg)](https://doi.org/10.5281/zenodo.1168286)<br>
 
-# About
-<b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and has implemented the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
-MPFIT was ported from [MINPACK-1](http://www.netlib.org/minpack/) library [2,3].<br><br>
-The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).<br>
-
-# License (GNU General Public License)
+# License (GNU General Public License) <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
 
 <p align="justify">This program is free software: you can redistribute it and/or modify<br>
@@ -51,14 +51,14 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br><br></p>
 
 For more details see [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
-# Run DQuickLTFit from source files
+# Run DQuickLTFit from source files <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 1. Download [Qt-framework](https://www.qt.io/download) (at least v5.x).
 2. Download and Setup the MS Visual Studio Compiler (at least version 2013).
 3. Compile and Deploy for x64.
 4. Open the example project ([TestData.dquicklt](/TestData/TestData.dquicklt)) in the folder [TestData](/TestData/).
 5. Finished. DQuickLTFit shows the [data](/TestData/TestData_5psPerChannel.dat) and fit(-results) as displayed above.
 
-# References
+# References <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 [1] [C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.](https://arxiv.org/abs/0902.2850)<br>
 [2] [J.J. Moré. in: Springer, Berlin, Heidelberg; 1978: pp. 105–116. doi:10.1007/BFb0067700](https://link.springer.com/chapter/10.1007/BFb0067700).<br>
 [3] [MINPACK-1, Jorge More'](http://www.netlib.org/minpack/)
