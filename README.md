@@ -1,6 +1,6 @@
 ![badge-OS](https://img.shields.io/badge/OS-tested%20under%20Windows%2010-brightgreen)
 
-Support this project and keep always updated about recent software releases, bug fixes and major improvements by [following on [github](https://github.com/dpscience?tab=followers).
+Support this project and keep always updated about recent software releases, bug fixes and major improvements by [following on github](https://github.com/dpscience?tab=followers).
 
 ![badge-followers](https://img.shields.io/github/followers/dpscience?style=social)
 ![badge-stars](https://img.shields.io/github/stars/dpscience/DQuickLTFit?style=social)
