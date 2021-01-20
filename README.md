@@ -1,44 +1,54 @@
-﻿# DQuickLTFit <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">   
+![badge-OS](https://img.shields.io/badge/OS-tested%20under%20Windows%2010-brightgreen)
+
+Support this project and keep always updated about recent software releases, bug fixes and major improvements by [following on [github](https://github.com/dpscience?tab=followers).
+
+![badge-followers](https://img.shields.io/github/followers/dpscience?style=social)
+![badge-stars](https://img.shields.io/github/stars/dpscience/DQuickLTFit?style=social)
+![badge-forks](https://img.shields.io/github/forks/dpscience/DQuickLTFit?style=social)
+
+# DQuickLTFit <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">   
+
+![badge-license](https://img.shields.io/badge/OS-Windows-blue)
+![badge-language](https://img.shields.io/badge/language-C++-blue)
+![badge-license](https://img.shields.io/badge/license-GPL-blue)
 
 Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
-<b>DQuickLTFit</b> - A Least-Square Fitting Tool for the Analysis of Positron-Lifetime Spectra consisting of discrete specific Lifetimes using the Levenberg-Marquardt Algorithm<br>
-
-#### We recommend using at least DQuickLTFit v4.0 as this is the first stable version.
+<b>DQuickLTFit</b> - A least-square fitting tool for the analysis of positron lifetime spectra consisting of discrete characteristic lifetimes using the Levenberg-Marquardt algorithm.<br>
 
 <br>![DQuickLTFit](/TestData/Software.png)
 
-# Quickstart Guide <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25"> 
+# Quickstart Guide on Windows OS <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25"> 
 
-1. Download the latest software release (<b>DQuickLTFit_v4_1.rar</b>): https://github.com/dpscience/DQuickLTFit/releases
-2. Unzip <b>DQuickLTFit_v4_1.rar</b>.
-3. Download and install the Visual C++ Redistributable Package (x64) if required: https://www.microsoft.com/de-de/download/details.aspx?id=48145
-3. Run the <b>DQuickLTFit</b> executable.
-
-# About <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
-<b>DQuickLTFit</b> software is written in C++ ([Qt-framework](https://www.qt.io/)) and has implemented the [MPFIT](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html) C library [1] for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm. 
-MPFIT was ported from [MINPACK-1](http://www.netlib.org/minpack/) library [2,3].<br><br>
-The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).<br>
+* Download the latest software release (<b>DQuickLTFit_v4_1.rar</b>): https://github.com/dpscience/DQuickLTFit/releases
+* Unzip <b>DQuickLTFit_v4_1.rar</b>.
+* Download and install the Visual C++ Redistributable Package (x64) if required: https://www.microsoft.com/de-de/download/details.aspx?id=48145
+* Run the <b>DQuickLTFit</b> executable.
 
 # How to cite this Software? <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
+
+* <b>You must cite the applied version of this software in your study.</b><br>
 
 You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This DOI represents all versions, and will always resolve to the latest one.<br>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168285.svg)](https://doi.org/10.5281/zenodo.1168285)
 
-## v4.x
+## ``v4.x``
 DQuickLTFit v4.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3356830.svg)](https://doi.org/10.5281/zenodo.3356830)<br>
+
 DQuickLTFit v4.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1414142.svg)](https://doi.org/10.5281/zenodo.1414142)<br>
 
-## v3.x
+## ``v3.x``
 DQuickLTFit v3.02:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1219482.svg)](https://doi.org/10.5281/zenodo.1219482)<br>
+
 DQuickLTFit v3.01:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1208613.svg)](https://doi.org/10.5281/zenodo.1208613)<br>
+
 DQuickLTFit v3.0:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1202345.svg)](https://doi.org/10.5281/zenodo.1202345)<br>
 
-## v2.x
+## ``v2.x``
 DQuickLTFit v2.06:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168286.svg)](https://doi.org/10.5281/zenodo.1168286)<br>
 
 # License (GNU General Public License) <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
-Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br><br>
+Copyright (c) 2016-2019 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rights reserved.<br>
 
 <p align="justify">This program is free software: you can redistribute it and/or modify<br>
 it under the terms of the GNU General Public License as published by<br>
@@ -51,18 +61,20 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br><br></p>
 
 For more details see [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
-# Run DQuickLTFit from source files <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
-1. Download [Qt-framework](https://www.qt.io/download) (at least v5.x).
-2. Download and Setup the MS Visual Studio Compiler (at least version 2013).
-3. Compile and Deploy for x64.
-4. Open the example project ([TestData.dquicklt](/TestData/TestData.dquicklt)) in the folder [TestData](/TestData/).
-5. Finished. DQuickLTFit shows the [data](/TestData/TestData_5psPerChannel.dat) and fit(-results) as displayed above.
+# Used Third Party Libraries and Licenses <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 
-# References <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
-[1] [C.B. Markwardt. Astron. Data Anal. Softw. Syst. XVIII ASP Conf. Ser. 2009; 411: 251.](https://arxiv.org/abs/0902.2850)<br>
-[2] [J.J. Moré. in: Springer, Berlin, Heidelberg; 1978: pp. 105–116. doi:10.1007/BFb0067700](https://link.springer.com/chapter/10.1007/BFb0067700).<br>
-[3] [MINPACK-1, Jorge More'](http://www.netlib.org/minpack/)
+<b>DQuickLTFit</b> is written in C++ using the [Qt-Framework](https://www.qt.io/) licensed under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0)
 
+The following 3rd party libraries are used by <b>DQuickLTFit</b> software.<br>
 
+### ``MPFIT (ported from MINPACK-1)``
+* [A C library for solving the non-linear least-square problem using the Levenberg-Marquardt algorithm.](https://www.physics.wisc.edu/~craigm/idl/cmpfit.html)
+The disclaimer of MPFIT library can be found [here](/Fit/mpfit_DISCLAIMER).
 
+# Deploy DQuickLTFit from Source Files using QtCreator<img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25">
 
+* Download the QtCreator and the [Qt-framework](https://www.qt.io/download) (at least v5.x).
+* Download and Setup the MS Visual Studio compiler (at least version 2013). It should also work with any other compiler e.g. MinGW but I recommend using VS compiler.
+* Open the .pro file in QtCreator. 
+* Deploy DQuickLTFit. It should finish without any errors.
+* Finished.
