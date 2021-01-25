@@ -20,7 +20,7 @@ Copyright (c) 2016-2021 Danny Petschke (danny.petschke@uni-wuerzburg.de) All rig
 # Quickstart Guide on Windows OS <img src="https://github.com/dpscience/DQuickLTFit/blob/master/Images/IconPNGRounded.png" width="25" height="25"> 
 
 ## ``Option 1: via installer``
-* Download the latest installer (<b>installer_DDRS4PALS-v1.14.exe</b>): https://github.com/dpscience/DDRS4PALS/releases
+* Download the latest installer (<b>installer_DQuickLTFit-v4.2.exe</b>): https://github.com/dpscience/DDRS4PALS/releases
 * Run the installer.
 * Run the <b>DQuickLTFit</b> executable.
 
