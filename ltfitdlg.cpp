@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2019 Danny Petschke
+**  Copyright (C) 2016-2021 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -75,6 +75,22 @@ DFastLTFitDlg::DFastLTFitDlg(const QString projectPath, QWidget *parent) :
     m_resultWindow = new DFastResultDlg;
     m_calculatorWindow = new DFastCalculatorDlg;
 
+    m_gplDialog = new DFastLicenseTextBox;
+    m_gplDialog->addLicense(":/license/gpl", "License - GPLv3");
+    m_gplDialog->hide();
+
+    m_lgplDialog = new DFastLicenseTextBox;
+    m_lgplDialog->addLicense(":/license/lgpl", "License - LGPLv3");
+    m_lgplDialog->hide();
+
+    m_usedgplDialog = new DFastLicenseTextBox;
+    m_usedgplDialog->addLicense(":/license/used-license", "Used License - GPLv3");
+    m_usedgplDialog->hide();
+
+    connect(ui->actionLicense_GPLv3, SIGNAL(triggered()), this, SLOT(showGPL()));
+    connect(ui->actionLicense_LGPLv3, SIGNAL(triggered()), this, SLOT(showLGPL()));
+    connect(ui->actionUsed_License_GPLv3, SIGNAL(triggered()), this, SLOT(showUsedGPL()));
+
     m_fitEngineThread = new QThread;
     m_fitEngine = new LifeTimeDecayFitEngine;
     m_fitEngine->moveToThread(m_fitEngineThread);
@@ -144,6 +160,9 @@ DFastLTFitDlg::DFastLTFitDlg(const QString projectPath, QWidget *parent) :
     ui->actionImport->setIcon(QIcon(":/localImages/Images/plot.svg"));
     ui->actionAbout->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
     ui->actionOpen_Calculator->setIcon(QIcon(":/localImages/Images/calculator73.svg"));
+    ui->actionLicense_GPLv3->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+    ui->actionLicense_LGPLv3->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
+    ui->actionUsed_License_GPLv3->setIcon(QIcon(":/localImages/Images/IconPNGRounded.png"));
 
     QPixmap redPixmap(20, 20), greenPixmap(20, 20), bluePixmap(20, 20);
     redPixmap.fill(Qt::red);
@@ -235,6 +254,10 @@ DFastLTFitDlg::~DFastLTFitDlg()
     DDELETE_SAFETY(m_resultWindow);
     DDELETE_SAFETY(m_plotWindow);
     DDELETE_SAFETY(m_calculatorWindow);
+
+    DDELETE_SAFETY(m_gplDialog);
+    DDELETE_SAFETY(m_lgplDialog);
+    DDELETE_SAFETY(m_usedgplDialog);
 
     DDELETE_SAFETY(m_chiSquareLabel);
     DDELETE_SAFETY(m_integralCountInROI);
@@ -1232,4 +1255,19 @@ void DFastLTFitDlg::printToFile(const QString &fileName, const QList<QPointF> &v
 
         file.close();
     }
+}
+
+void DFastLTFitDlg::showGPL()
+{
+    m_gplDialog->show();
+}
+
+void DFastLTFitDlg::showLGPL()
+{
+    m_lgplDialog->show();
+}
+
+void DFastLTFitDlg::showUsedGPL()
+{
+    m_usedgplDialog->show();
 }

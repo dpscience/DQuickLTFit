@@ -26,37 +26,29 @@
 **
 *****************************************************************************/
 
-#ifndef DFASTCALCULATORDLG_H
-#define DFASTCALCULATORDLG_H
+#ifndef DFASTLICENSETEXTBOX_H
+#define DFASTLICENSETEXTBOX_H
 
 #include <QWidget>
+#include <QIODevice>
+#include <QFile>
 
-#include "DLib/DLib.h"
+#include "DLib/DTypes/defines.h"
 
 namespace Ui {
-class DFastCalculatorDlg;
+class DFastLicenseTextBox;
 }
 
-class DFastCalculatorDlg : public QWidget
-{
+class DFastLicenseTextBox : public QWidget {
     Q_OBJECT
 public:
-    explicit DFastCalculatorDlg(QWidget *parent = 0);
-    virtual ~DFastCalculatorDlg();
+    explicit DFastLicenseTextBox(QWidget *parent = nullptr);
+    virtual ~DFastLicenseTextBox();
 
-public slots:
-    void setTextFont(const QFont& font);
-
-protected:
-    virtual void closeEvent(QCloseEvent *event);
-    virtual void hideEvent(QHideEvent *event);
-    virtual void showEvent(QShowEvent *event);
-
-signals:
-    void visibilityChanged(bool);
+    void addLicense(const QString& license, const QString& header);
 
 private:
-    Ui::DFastCalculatorDlg *ui;
+    Ui::DFastLicenseTextBox *ui;
 };
 
-#endif // DFASTCALCULATORDLG_H
+#endif // DFASTLICENSETEXTBOX_H

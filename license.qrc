@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/license">
+        <file alias="copyright">license/COPYRIGHT</file>
+        <file alias="gpl">license/LICENSE.GPLv3</file>
+        <file alias="lgpl">license/LICENSE.LGPLv3</file>
+        <file alias="modifications">license/MODIFICATIONS</file>
+        <file alias="used-license">license/USED-LICENSE.GPLv3</file>
+    </qresource>
+</RCC>

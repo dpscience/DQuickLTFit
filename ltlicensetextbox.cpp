@@ -26,37 +26,32 @@
 **
 *****************************************************************************/
 
-#ifndef DFASTCALCULATORDLG_H
-#define DFASTCALCULATORDLG_H
+#include "ltlicensetextbox.h"
+#include "ui_ltlicensetextbox.h"
 
-#include <QWidget>
+DFastLicenseTextBox::DFastLicenseTextBox(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::DFastLicenseTextBox) {
+    ui->setupUi(this);
 
-#include "DLib/DLib.h"
-
-namespace Ui {
-class DFastCalculatorDlg;
+    connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(close()));    
 }
 
-class DFastCalculatorDlg : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit DFastCalculatorDlg(QWidget *parent = 0);
-    virtual ~DFastCalculatorDlg();
+DFastLicenseTextBox::~DFastLicenseTextBox() {
+    DDELETE_SAFETY(ui)
+}
 
-public slots:
-    void setTextFont(const QFont& font);
+void DFastLicenseTextBox::addLicense(const QString &license, const QString &header) {
+    QFile file(license);
 
-protected:
-    virtual void closeEvent(QCloseEvent *event);
-    virtual void hideEvent(QHideEvent *event);
-    virtual void showEvent(QShowEvent *event);
+    if (file.open(QIODevice::ReadOnly)) {
+        ui->plainTextEdit->appendPlainText(QString(file.readAll()));
 
-signals:
-    void visibilityChanged(bool);
+        file.close();
+    }
 
-private:
-    Ui::DFastCalculatorDlg *ui;
-};
+    setWindowTitle(header);
 
-#endif // DFASTCALCULATORDLG_H
+    ui->plainTextEdit->moveCursor(QTextCursor::Start);
+    ui->plainTextEdit->setReadOnly(true);
+}

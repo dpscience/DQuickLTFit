@@ -4,7 +4,7 @@
 **  based on the Least-Square Optimization using the Levenberg-Marquardt
 **  Algorithm.
 **
-**  Copyright (C) 2016-2019 Danny Petschke
+**  Copyright (C) 2016-2021 Danny Petschke
 **
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 #include "ltplotdlg.h"
 #include "ltresultdlg.h"
 #include "ltcalculatordlg.h"
+#include "ltlicensetextbox.h"
 
 #include "Fit/lifetimedecayfit.h"
 
@@ -114,6 +115,9 @@ private slots:
     void disablePDFExport();
 
     void showAbout();
+    void showGPL();
+    void showLGPL();
+    void showUsedGPL();
 
 public:
     static QStringList autoDetectDelimiter(const QString& row);
@@ -124,6 +128,10 @@ private:
     DFastPlotDlg *m_plotWindow;
     DFastResultDlg *m_resultWindow;
     DFastCalculatorDlg *m_calculatorWindow;
+
+    DFastLicenseTextBox *m_gplDialog;
+    DFastLicenseTextBox *m_lgplDialog;
+    DFastLicenseTextBox *m_usedgplDialog;
 
     LifeTimeDecayFitEngine *m_fitEngine;
     QThread *m_fitEngineThread;

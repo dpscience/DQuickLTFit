@@ -138,7 +138,7 @@
      <x>0</x>
      <y>0</y>
      <width>777</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="defaultUp">
@@ -191,6 +191,10 @@
      <string>Info</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="separator"/>
+    <addaction name="actionLicense_GPLv3"/>
+    <addaction name="actionLicense_LGPLv3"/>
+    <addaction name="actionUsed_License_GPLv3"/>
    </widget>
    <widget class="QMenu" name="menuCalculator">
     <property name="title">
@@ -419,6 +423,21 @@
    </property>
    <property name="shortcut">
     <string>Alt+H</string>
+   </property>
+  </action>
+  <action name="actionLicense_GPLv3">
+   <property name="text">
+    <string>License-GPLv3</string>
+   </property>
+  </action>
+  <action name="actionLicense_LGPLv3">
+   <property name="text">
+    <string>License-LGPLv3</string>
+   </property>
+  </action>
+  <action name="actionUsed_License_GPLv3">
+   <property name="text">
+    <string>Used-License GPLv3</string>
    </property>
   </action>
  </widget>

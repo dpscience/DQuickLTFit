@@ -1,8 +1,30 @@
-#-------------------------------------------------
+# ****************************************************************************
 #
-# Project created by QtCreator 2015-12-06T15:24:47
+#  DQuickLTFit, a software for the analysis of Positron-Lifetime Spectra
+#  based on the Least-Square Optimization using the Levenberg-Marquardt
+#  Algorithm.
 #
-#-------------------------------------------------
+#  Copyright (C) 2016-2021 Danny Petschke
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see http://www.gnu.org/licenses/.
+#
+# *****************************************************************************
+#
+#  @author: Danny Petschke
+#  @contact: danny.petschke@uni-wuerzburg.de
+#
+# *****************************************************************************
 
 QT += core gui
 
@@ -12,7 +34,7 @@ macx {
 QMAKE_MAC_SDK = macosx10.11
 }
 
-TARGET = DQuickLTFit_4_1
+TARGET = DQuickLTFit_4_2
 TEMPLATE = app
 
 win32{
@@ -22,7 +44,6 @@ RC_FILE = myapp.rc
 macx{
 ICON = myappicon.icns
 }
-
 
 SOURCES += main.cpp\
         Settings/projectmanager.cpp \
@@ -35,7 +56,8 @@ SOURCES += main.cpp\
         ltplotdlg.cpp \
         ltparameterlistview.cpp \
         ltfitplotresidualview.cpp \
-        ltcalculatordlg.cpp
+        ltcalculatordlg.cpp \
+        ltlicensetextbox.cpp \
 
 HEADERS  += \
                     Settings/projectmanager.h \
@@ -50,6 +72,7 @@ HEADERS  += \
                     ltparameterlistview.h \
                     ltfitplotresidualview.h \
                     ltcalculatordlg.h \
+                    ltlicensetextbox.h \
                     ltdefines.h
 
 FORMS    += \
@@ -58,7 +81,8 @@ FORMS    += \
                    ltplotdlg.ui \
                    ltparameterlistview.ui \
                    ltfitplotresidualview.ui \
-                   ltcalculatordlg.ui
+                   ltcalculatordlg.ui \
+                   ltlicensetextbox.ui \
 
 
 #DLib-import <START>:
@@ -108,6 +132,7 @@ FORMS    += DLib/DGUI/horizontalrangedoubleslider.ui\
 
 RESOURCES += \
             DLib/DResources/res.qrc \
-                            Images.qrc
+                            Images.qrc \
+    license.qrc
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #DLib-import <END>:
