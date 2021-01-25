@@ -41,7 +41,7 @@ You can cite all versions by using the <b>DOI 10.5281/zenodo.1168285</b>. This D
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1168285.svg)](https://doi.org/10.5281/zenodo.1168285)
 
 ## ``v4.x``
-DQuickLTFit v4.2:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3356830.svg)](https://doi.org/10.5281/zenodo.3356830)<br>
+DQuickLTFit v4.2:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4461707.svg)](https://doi.org/10.5281/zenodo.4461707)<br>
 
 DQuickLTFit v4.1:<br>[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3356830.svg)](https://doi.org/10.5281/zenodo.3356830)<br>
 
